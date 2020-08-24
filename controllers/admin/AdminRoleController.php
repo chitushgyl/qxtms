@@ -76,7 +76,7 @@ class AdminRoleController extends AdminBaseController
             $model->addtime = time();
             if ($flag_error) {
                 if($model->save()){
-                    AddLogController::addSysLog(AddLogController::permission,AddLogController::add,'新增职位为:'.$role);
+                    AddLogController::addSysLog(AddLogController::permission,'新增职位为:'.$role);
                     return $this->withSuccess('新增成功!')->redirect(route('admin.admin-role.index'));
                 } else { 
                     $this->withErrors('保存失败，请返回重试!');
@@ -105,7 +105,7 @@ class AdminRoleController extends AdminBaseController
             $model = AdminRole::findOne(['id'=>$id]);
             $role = $model->role;
             if($model && $model->delete()){
-                AddLogController::addSysLog(AddLogController::permission,AddLogController::delete,'刪除职位为:'.$role);
+                AddLogController::addSysLog(AddLogController::permission,'刪除职位为:'.$role);
                 return $this->resultInfo(['retCode'=>1000,'retMsg'=>'删除成功!']);
             }else{
                 return $this->resultInfo(['retCode'=>1001,'retMsg'=>'删除失败!']);
