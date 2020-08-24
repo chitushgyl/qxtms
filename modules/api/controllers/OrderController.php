@@ -94,11 +94,6 @@ class OrderController extends CommonController
             }
         }
 
-        if (empty($temperture)){
-            $data = $this->encrypt(['code'=>400,'msg'=>'请选择温度']);
-            return $this->resultInfo($data);
-        }
-
         if (empty($cargo_name)){
             $data = $this->encrypt(['code'=>400,'msg'=>'货品名称不能为空！']);
             return $this->resultInfo($data);
@@ -334,10 +329,6 @@ class OrderController extends CommonController
                 $data = $this->encrypt(['code'=>400,'msg'=>'请选择车型']);
                 return $this->resultInfo($data);
             }
-        }
-        if (empty($temperture)){
-            $data = $this->encrypt(['code'=>400,'msg'=>'请选择温度']);
-            return $this->resultInfo($data);
         }
 
         if (empty($cargo_weight)){
@@ -595,11 +586,6 @@ class OrderController extends CommonController
                 $data = $this->encrypt(['code'=>400,'msg'=>'请选择车型']);
                 return $this->resultInfo($data);
             }
-        }
-
-        if (empty($temperture)){
-            $data = $this->encrypt(['code'=>400,'msg'=>'请选择温度']);
-            return $this->resultInfo($data);
         }
 
         if (empty($cargo_name)){
@@ -2169,11 +2155,6 @@ class OrderController extends CommonController
         }
         if($cartype == 0){
             $data = $this->encrypt(['code'=>400,'msg'=>'请选择车型']);
-            return $this->resultInfo($data);
-        }
-
-        if (empty($temperture)){
-            $data = $this->encrypt(['code'=>400,'msg'=>'请选择温度']);
             return $this->resultInfo($data);
         }
 

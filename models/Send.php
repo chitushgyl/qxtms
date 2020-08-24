@@ -31,7 +31,7 @@ class Send extends \yii\db\ActiveRecord{
 
             'accessKeySecret' => 'EpzuQsYDRc4qmdKGABkqmI8zKlkHki',
 
-            'signName' => '赤途冷链',
+            'signName' => '齐鑫供应链',
 
             'templateCode' => 'SMS_196658029'
 

@@ -1,0 +1,10 @@
+/vendor
+/.idea
+/.vagrant
+!.gitignore
+composer.lock
+web/image/qrcode/
+web/uploads
+/config
+/models/Send.php
+
