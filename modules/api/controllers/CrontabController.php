@@ -59,22 +59,27 @@ class CrontabController extends CommonController
                     $payment = AppPayment::find()->where(['group_id'=>$order->group_id,'order_id'=>$value['id']])->one();
                     $payment->status = 3;
                     $payment->al_pay = $payment->truepay = $pay_message->paynum ;
-                }
-                $order->order_status = 6;
-                $res = $res_r = $res_b = $res_p = $res_g = true;
-                $transaction= AppOrder::getDb()->beginTransaction();
-                try{
+                    $order->order_status = 6;
+                    $res = $res_r = $res_b = $res_p = $res_g = true;
+                    $transaction= AppOrder::getDb()->beginTransaction();
+                    try{
+                        $res = $order->save();
+                        $res_g = $group->save();
+                        $res_b = $balance->save();
+                        $res_p = $paymessage->save();
+                        $res_r = $receive->save();
+                        $transaction->commit();
+                        $this->hanldlog('','自动完成订单'.$order->ordernumber);
+                    }catch(\Exception $e){
+                        $transaction->rollBack();
+                    }
+                }else{
+                    $order->order_status = 6;
                     $res = $order->save();
-                    $res_g = $group->save();
-                    $res_b = $balance->save();
-                    $res_p = $paymessage->save();
-                    $res_r = $receive->save();
-                    $transaction->commit();
-                    $this->hanldlog('','自动完成订单'.$order->ordernumber);
-                }catch(\Exception $e){
-                    $transaction->rollBack();
+                    if ($res){
+                        $this->hanldlog('','自动完成订单'.$order->ordernumber);
+                    }
                 }
-
             }
         }
     }
@@ -83,7 +88,7 @@ class CrontabController extends CommonController
      *整车订单过期
      * */
     public function actionVehical_expire(){
-        $list = AppOrder::find()->where(['delete_flag'=>'Y','order_status'=>1,'line_status'=>2])->asArray()->all();
+        $list = AppOrder::find()->where(['delete_flag'=>'Y','order_status'=>1,'line_status'=>2])->where(['!=','order_type',11])->asArray()->all();
         if (count($list)<1){
             return false;
         }
@@ -92,8 +97,8 @@ class CrontabController extends CommonController
             if (time() >= strtotime($value['time_start'])){
                 //如订单已支付，退款到余额
                 if($order->pay_status == 2 && $order->money_state == 'Y'){
-                    $pay_message = AppPaymessage::find()->where(['order_id'=>$value['ordernumber'],'state'=>1,'group_id'=>$value['group_id']])->one();
-                    $group = AppGroup::find()->where(['id'=>$order->deal_company])->one();
+                    $pay_message = AppPaymessage::find()->where(['orderid'=>$value['ordernumber'],'state'=>1,'group_id'=>$value['group_id']])->one();
+                    $group = AppGroup::find()->where(['id'=>$order->group_id])->one();
                     $group->balance = $group->balance + $pay_message->paynum;
                     $balance = new AppBalance();
                     $balance->pay_money = $pay_message->paynum;
@@ -103,7 +108,7 @@ class CrontabController extends CommonController
                     $balance->create_time = date('Y-m-d H:i:s',time());
                     $balance->ordertype = 1;
                     $balance->orderid = $order->id;
-                    $balance->group_id = $order->deal_company;
+                    $balance->group_id = $order->group_id;
                     $paymessage = new AppPaymessage();
                     $paymessage->paynum = $pay_message->paynum;
                     $paymessage->create_time = date('Y-m-d H:i:s',time());
@@ -112,9 +117,12 @@ class CrontabController extends CommonController
                     $paymessage->type = 1;
                     $paymessage->state = 5;
                     $paymessage->orderid = $order->ordernumber;
-                    $receive = AppReceive::find()->where(['group_id'=>$order->deal_company,'order_id'=>$value['id']])->one();
-                    $receive->status = 3;
-                    $receive->trueprice = $receive->al_price = $order->line_price;
+                    $receive = AppReceive::find()->where(['group_id'=>$order->group_id,'order_id'=>$value['id']])->one();
+                    if ($receive){
+                        $receive->status = 3;
+                        $receive->trueprice = $receive->al_price = $order->line_price;
+                    }
+
                     $payment = AppPayment::find()->where(['group_id'=>$order->group_id,'order_id'=>$value['id']])->one();
                     $payment->status = 3;
                     $payment->al_pay = $payment->truepay = $pay_message->paynum ;
@@ -124,10 +132,18 @@ class CrontabController extends CommonController
                 $transaction= AppOrder::getDb()->beginTransaction();
                 try{
                     $res = $order->save();
-                    $res_g = $group->save();
-                    $res_b = $balance->save();
-                    $res_p = $paymessage->save();
-                    $res_r = $receive->save();
+                    if($group){
+                        $res_g = $group->save();
+                    }
+                    if($balance){
+                        $res_b = $balance->save();
+                    }
+                    if($paymessage){
+                        $res_p = $paymessage->save();
+                    }
+                    if ($receive){
+                        $res_r = $receive->save();
+                    }
                     $transaction->commit();
                     $this->hanldlog('','订单已超时'.$order->ordernumber);
                 }catch(\Exception $e){
@@ -160,7 +176,8 @@ class CrontabController extends CommonController
                   ->asArray()
                   ->one();
             if (time() - strtotime($value['start_time'] >= 5*24*3600 )){
-                $bulk->orderstate = 5;
+                $bulk_order = AppBulk::findOne($value['id']);
+                $bulk_order->orderstate = 5;
                 $group = AppGroup::find()->where(['id'=>$bulk['groupid']])->one();
                 $group->balance = $group->balance + $bulk['line_price'];
                 $balance = new AppBalance();
@@ -189,7 +206,7 @@ class CrontabController extends CommonController
                     $res_b = $balance->save();
                     $res_pay = $paymessage->save();
                     $res_g = $group->save();
-                    $res = $bulk->save();
+                    $res = $bulk_order->save();
                     $arr = $receive->save();
                     if ($res && $arr && $res_g && $res_pay && $res_b){
                         $transaction->commit();
