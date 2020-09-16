@@ -69,7 +69,7 @@ class CrontabController extends CommonController
                         $res_p = $paymessage->save();
                         $res_r = $receive->save();
                         $transaction->commit();
-                        $this->hanldlog('','自动完成订单'.$order->ordernumber);
+                        $this->hanldlog($order->create_user_id,'自动完成订单'.$order->ordernumber);
                     }catch(\Exception $e){
                         $transaction->rollBack();
                     }
@@ -77,7 +77,7 @@ class CrontabController extends CommonController
                     $order->order_status = 6;
                     $res = $order->save();
                     if ($res){
-                        $this->hanldlog('','自动完成订单'.$order->ordernumber);
+                        $this->hanldlog($order->create_user_id,'自动完成订单'.$order->ordernumber);
                     }
                 }
             }
@@ -88,7 +88,7 @@ class CrontabController extends CommonController
      *整车订单过期
      * */
     public function actionVehical_expire(){
-        $list = AppOrder::find()->where(['delete_flag'=>'Y','order_status'=>1,'line_status'=>2])->where(['!=','order_type',11])->asArray()->all();
+        $list = AppOrder::find()->where(['delete_flag'=>'Y','order_status'=>1,'line_status'=>2])->andwhere(['!=','order_type',11])->asArray()->all();
         if (count($list)<1){
             return false;
         }
@@ -145,7 +145,7 @@ class CrontabController extends CommonController
                         $res_r = $receive->save();
                     }
                     $transaction->commit();
-                    $this->hanldlog('','订单已超时'.$order->ordernumber);
+                    $this->hanldlog($order->create_user_id,'订单已超时'.$order->ordernumber);
                 }catch(\Exception $e){
                     $transaction->rollBack();
                 }
@@ -169,12 +169,11 @@ class CrontabController extends CommonController
         }
         foreach ($list as $key => $value){
             $bulk = AppBulk::find()
-                  ->alias('a')
-                  ->select('a.*,b.group_id groupid')
-                  ->leftJoin('app_line b','a.shiftid = b.id')
-                  ->where(['a.id'=>$value['id']])
-                  ->asArray()
-                  ->one();
+                ->alias('a')
+                ->select('a.*,b.group_id groupid')
+                ->leftJoin('app_line b','a.shiftid = b.id')
+                ->where(['a.id'=>$value['id']])
+                ->one();
             if (time() - strtotime($value['start_time'] >= 5*24*3600 )){
                 $bulk_order = AppBulk::findOne($value['id']);
                 $bulk_order->orderstate = 5;
@@ -250,21 +249,21 @@ class CrontabController extends CommonController
      * 线路自动发车
      * */
     public function actionLine_dispatch(){
-          $list = AppLine::find()->where(['delete_flag'=>'Y','state'=>1])->asArray()->all();
-             if (count($list)>=1){
-                foreach($list as $key => $value){
-                    $bulk = AppBulk::find()->where(['shiftid'=>$value['id']])->one();
-                    if(!empty($bulk)){
-                        $line = AppLine::findOne($value['id']);
-                        $time = strtotime($value['start_time']);
-                        if (time()>= $time){
-                            $line->state = 2;
-                            $res = $line->save();
-                            if ($res){
-                                $this->hanldlog($value['create_user_id'],'线路'.$value['startcity'].'->'.$value['endcity'].'已发车');
-                            }
+        $list = AppLine::find()->where(['delete_flag'=>'Y','state'=>1])->asArray()->all();
+        if (count($list)>=1){
+            foreach($list as $key => $value){
+                $bulk = AppBulk::find()->where(['shiftid'=>$value['id']])->one();
+                if(!empty($bulk)){
+                    $line = AppLine::findOne($value['id']);
+                    $time = strtotime($value['start_time']);
+                    if (time()>= $time){
+                        $line->state = 2;
+                        $res = $line->save();
+                        if ($res){
+                            $this->hanldlog($value['create_user_id'],'线路'.$value['startcity'].'->'.$value['endcity'].'已发车');
                         }
                     }
+                }
             }
         }
     }
@@ -273,54 +272,67 @@ class CrontabController extends CommonController
      * 自动生成线路
      * */
     public function actionProduct_line(){
-        $list = AppLineLog::find()->where(['use_flag'=>'Y','delete_flag'=>'Y','line_state'=>1])->asArray()->all();
+        $list = AppLineLog::find()
+            ->alias('a')
+            ->select('a.*,b.group_name')
+            ->leftJoin('app_group b','a.group_id = b.id')
+            ->where(['a.use_flag'=>'Y','a.delete_flag'=>'Y','a.line_state'=>1])
+            ->asArray()
+            ->all();
         if (count($list)<1){
             return false;
         }
         foreach($list as $key => $value){
             $time_week = json_decode($value['time_week']);
             foreach ($time_week as $k => $v){
-              $time = $this->getTimeFromWeek($v);
-              $time1 = strtotime(date('Y-m-d'.' '.$value['time'],$time));
-              $line = new AppLine();
-              $line->startcity = $value['startcity'];
-              $line->endcity = $value['endcity'];
-              $line->line_price = $value['line_price'];
-              $line->group_id = $value['group_id'];
-              $line->trunking = $value['trunking'];
-              $line->picktype = $value['picktype'];
-              $line->sendtype = $value['sendtype'];
-              $line->begin_store = $value['begin_store'];
-              $line->end_store = $value['end_store'];
-              $line->pickprice = $value['pickprice'];
-              $line->sendprice = $value['sendprice'];
-              $line->start_time = date('Y-m-d'.' '.$value['time'],$time);
-              $line->arrive_time = date('Y-m-d H:i:s',($time1 + $value['trunking']*24*3600));
-              $line->all_volume = $value['all_volume'];
-              $line->all_weight = $value['all_weight'];
-              $line->weight_price = $value['weight_price'];
-              $line->transfer = $value['centercity'];
-              $line->create_user_id = $value['create_user_id'];
-              $line->transfer_info = $value['center_store'];
-              $line->line_id = $value['id'];
-              $line->carriage_id = $value['carriage'];
-              $price = json_decode($value['weight_price'],true);
-              //获取最低单价
-              foreach($price as $kkk =>$vvv){
-                  $price_a[] = $vvv['price'];
-              }
-              $line->price = min($price_a);
-              $line->eprice = min($price_a)*1000/2.5;
+                $time = $this->getTimeFromWeek($v);
+                $time1 = strtotime(date('Y-m-d'.' '.$value['time'],$time));
+                $time3 = date('mdHis',time());
+                $line = new AppLine();
+                $line->startcity = $value['startcity'];
+                $line->endcity = $value['endcity'];
+                $c1 = $this->getfirstchar($value['group_name']);
+                $c2 = $this->getfirstchar($value['group_name'],1,1);
+                $c3 = $this->getfirstchar($value['startcity']);
+                $c4 = $this->getfirstchar($value['endcity']);
+                $line->shiftnumber = $c1.$c2.$c3.$c4.$time3.$v;
+                $line->line_price = $value['line_price'];
+                $line->group_id = $value['group_id'];
+                $line->trunking = $value['trunking'];
+                $line->picktype = $value['picktype'];
+                $line->sendtype = $value['sendtype'];
+                $line->begin_store = $value['begin_store'];
+                $line->end_store = $value['end_store'];
+                $line->pickprice = $value['pickprice'];
+                $line->sendprice = $value['sendprice'];
+                $line->start_time = date('Y-m-d'.' '.$value['time'],$time);
+                $line->arrive_time = date('Y-m-d H:i:s',($time1 + $value['trunking']*24*3600));
+                $line->all_volume = $value['all_volume'];
+                $line->all_weight = $value['all_weight'];
+                $line->weight_price = $value['weight_price'];
+                $line->transfer = $value['centercity'];
+                $line->create_user_id = $value['create_user_id'];
+                $line->transfer_info = $value['center_store'];
+                $line->line_id = $value['id'];
+                $line->carriage_id = $value['carriage'];
+                $line->line_state  = 2;
+                $price = json_decode($value['weight_price'],true);
+                //获取最低单价
+                foreach($price as $kkk =>$vvv){
+                    $price_a[] = $vvv['price'];
+                }
+                $line->price = min($price_a);
+                $line->eprice = min($price_a)*1000/2.5;
 
-              $res = $line->save();
-              if ($res){
-                  $line_e = AppLineLog::findOne($value['id']);
-                  $line_e->line_state = 2;
-                  $line_e->save();
-                  $this->hanldlog($value['create_user_id'],'定时生成线路'.$line->startcity.'->'.$line->endcity);
-              }else{
-                  continue;
-              }
+                $res = $line->save();
+                if ($res){
+                    $line_e = AppLineLog::findOne($value['id']);
+                    $line_e->line_state = 2;
+                    $line_e->save();
+                    $this->hanldlog($value['create_user_id'],'定时生成线路'.$line->startcity.'->'.$line->endcity);
+                }else{
+                    continue;
+                }
             }
         }
     }
@@ -370,7 +382,7 @@ class CrontabController extends CommonController
                     $line->state = 5;
                     $res = $line->save();
                     if ($res){
-                      $this->hanldlog($value['create_user_id'],'线路'.$value['startcity'].'->'.$value['endcity'].'已超时');
+                        $this->hanldlog($value['create_user_id'],'线路'.$value['startcity'].'->'.$value['endcity'].'已超时');
                     }
                 }
             }
@@ -518,7 +530,7 @@ class CrontabController extends CommonController
                     $res_r = $payment->save();
                     if ($res && $res_m && $res_b && $res_r) {
                         $transaction->commit();
-                        $this->hanldlog($value['user_id'], '超时取消接单' . $value['order_id']);
+                        $this->hanldlog($order->create_user_id, '超时取消接单' . $value['order_id']);
                     }
                 } catch (\Exception $e) {
                     $transaction->rollback();
@@ -527,5 +539,42 @@ class CrontabController extends CommonController
         }
 
     }
+
+    /*
+     * 市内订单超时(超过时间，订单自动下线)
+     * */
+    public function actionCity_expire(){
+        $list = AppOrder::find()->where(['delete_flag'=>'Y','order_status'=>1,'order_type'=>11])->asArray()->all();
+        if (count($list)<1){
+            return false;
+        }
+        foreach($list as $key => $value){
+            $order = AppOrder::findOne($value['id']);
+            if (time() - strtotime($value['line_time']) >= 24*3600){
+                $order->line_status = 1;
+                $order->line_price = '';
+                $order->line_start_contant = '';
+                $order->line_end_contant = '';
+                $payment = AppPayment::find()->where(['order_id'=>$value['id'],'group_id'=>$order->group_id,'type'=>3])->one();
+                $transaction = AppPayment::getDb()->beginTransaction();
+                try {
+                    $res = $order->save();
+                    if ($payment){
+                        $arr = $payment->delete();
+                    }
+                    if ($res && $arr){
+                        $transaction->commit();
+                        $this->hanldlog($order->create_user_id, '订单超时未接单' . $value['ordernumber']);
+                    }else{
+                        $transaction->rollBack();
+                    }
+                }catch(\Exception $e){
+                    $transaction->rollBack();
+                }
+            }
+        }
+
+    }
+
 }
 
