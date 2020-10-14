@@ -30,7 +30,7 @@ class AppRole extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['group_id', 'role_auth','top_auth'], 'string'],
+            [['group_id', 'role_auth','top_auth','app_auth'], 'string'],
             [['update_time'], 'safe'],
             [['name'], 'string', 'max' => 30],
         ];
@@ -64,6 +64,7 @@ class AppRole extends \yii\db\ActiveRecord
             'update_time' => 'Update Time',
             'role_auth' => 'Role Auth',
             'top_auth' => 'Role Auth',
+            'app_auth' => 'App Auth',
         ];
     }
 }

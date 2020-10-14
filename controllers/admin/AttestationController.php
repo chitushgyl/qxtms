@@ -3,6 +3,7 @@ namespace app\controllers\admin;
 
 
 use app\models\AppAskForCompany;
+use app\models\AppGroup;
 use Yii;
 
 
@@ -62,8 +63,9 @@ Class AttestationController extends AdminBaseController{
             return json_encode(['code'=>4000,'msg'=>'已审核，请勿重复操作']);
         }
         if($this->request->isAjax) {
-            $account = User::find($order->account_id);
-            $account->level_id = 3;
+            $account = AppGroup::findOne($order->group_id);
+            $account->level_id = 2;
+            $account->group_name = $order->group_name;
             $arr = $account->save();
             $order->state = 2;
             $res = $order->save();
@@ -90,10 +92,10 @@ Class AttestationController extends AdminBaseController{
             $order->state = 3;
             $res = $order->save();
             if ($res){
-                return json_encode(['code'=>2000,'msg'=>'审核成功']);
+                return json_encode(['code'=>2000,'msg'=>'操作成功']);
             }
         }else{
-            return json_encode(['code'=>4000,'msg'=>'审核失败']);
+            return json_encode(['code'=>4000,'msg'=>'操作失败']);
         }
     }
 

@@ -95,9 +95,10 @@ class CarriageOrderController extends CommonController
 
         $list = AppMegerOrder::find()
             ->alias('v')
-            ->select(['v.*', 't.carparame','b.name'])
+            ->select(['v.*', 't.carparame','b.name','c.data','c.carriage_price as company_price','c.pick_id'])
             ->leftJoin('app_cartype t', 'v.cartype=t.car_id')
             ->leftJoin('app_carriage b','v.deal_company = b.cid')
+            ->leftJoin('app_order_carriage c','v.id = c.pick_id')
             ->where(['v.deal_company' => $carriage_id,'v.group_id'=>$group_id]);
         if ($ordernumber) {
             $list->andWhere(['like', 'v.ordernumber', $ordernumber]);

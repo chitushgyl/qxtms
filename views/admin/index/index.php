@@ -182,7 +182,9 @@ use yii\helpers\Url;
     }).extend({
         index: 'lib/index' //主入口模块
     }).use('index'); 
-
+    var data = '<?php echo $data; ?>';
+    var pant = '<?php echo $pant; ?>';
+    var list = '<?php echo $list; ?>';
     layui.use(['layer','jquery'],function(){
         var layer = layui.layer;
         var $ = layui.jquery;

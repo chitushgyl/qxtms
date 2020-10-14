@@ -21,7 +21,7 @@ class AppIpController extends CommonController
         $status = $input['status'];
         $page = $input['page'] ?? 1;
         $limit = $input['limit'] ?? 10;
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -33,7 +33,7 @@ class AppIpController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $user = $check_result['user'];
         $group_id = $user->parent_group_id;
         $list = AppIpApply::find();
@@ -77,6 +77,7 @@ class AppIpController extends CommonController
         $logo = $input['logo'];
         $index = $input['index'];
         $type = $input['type'];
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -102,7 +103,7 @@ class AppIpController extends CommonController
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $group_id = $user->parent_group_id;
 
@@ -152,6 +153,7 @@ class AppIpController extends CommonController
         // $full_name = $input['full_name'];
         $logo = $input['logo'];
         $index = $input['index'];
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -177,7 +179,7 @@ class AppIpController extends CommonController
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $group_id = $user->parent_group_id;
 
@@ -236,11 +238,12 @@ class AppIpController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppIpApply::find()->where(['id'=>$id])->one();
         if ($model->status != 2) {

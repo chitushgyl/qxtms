@@ -88,13 +88,41 @@ class AppAuthLeft extends \yii\db\ActiveRecord
      */
     public static function getList(){
         $tree = [];
-        // $list = AppAuthLeft::find()
+        $auth = AppAuthLeft::find()
+            ->select(['id','display_name','route','parent_id','icon','num'])
+            ->where(['use_flag'=>'Y'])
+            ->andWhere(['!=','route','/group_account/index'])
+            ->orderBy(['sort'=> SORT_ASC])
+            ->asArray()
+            ->all();
+        // $level = AppLevel::find()->where(['level_id'=>3])->one();
+        // $auth = $level->auth;
+        // $role_ids = explode(',',$auth);
+        // $auth = AppAuthLeft::find()
+        //     ->select(['id','display_name','route','parent_id','icon','num'])
         //     ->where(['use_flag'=>'Y'])
+        //     ->andWhere(['in','id',$role_ids])
         //     ->andWhere(['!=','route','/group_account/index'])
-        //     ->orderBy(['sort'=> SORT_ASC])
+        //     ->orderBy(['sort'=>SORT_ASC])
         //     ->asArray()
         //     ->all();
-        $level = AppLevel::find()->where(['level_id'=>3])->one();
+        if ($auth) {
+            $tree = list_to_tree($auth);
+        }
+        return $tree;
+    }    
+
+    public static function getList_chitu($chitu = 2){
+        $tree = [];
+        if ($chitu == 1) {
+            $level = AppLevel::find()->where(['level_id'=>1])->one();
+        } else if ($chitu == 2) {
+            $level = AppLevel::find()->where(['level_id'=>3])->one();
+        } else if ($chitu == 3) {
+            $level = AppLevel::find()->where(['level_id'=>2])->one();
+        } else if ($chitu == 4) {
+            $level = AppLevel::find()->where(['level_id'=>4])->one();
+        }
         $auth = $level->auth;
         $role_ids = explode(',',$auth);
         $auth = AppAuthLeft::find()

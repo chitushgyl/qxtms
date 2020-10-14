@@ -24,7 +24,7 @@ class LogController extends CommonController
         $group_id = $input['group_id'];
         $page = $input['page'] ?? 1;
         $limit = $input['limit'] ?? 10;
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -38,7 +38,7 @@ class LogController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
 
         $admin_list = User::find()
             ->select(['id'])

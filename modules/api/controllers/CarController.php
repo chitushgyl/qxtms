@@ -86,7 +86,7 @@ class CarController extends CommonController
         $carnumber = $input['carnumber'];//车牌号
         $cartype = $input['cartype'] ? $input['cartype'] : 1;//车型
         $group_id = $input['group_id'];//所属公司ID
-        $control = $input['control'];//车型
+        $control = $input['control'];//温度
         $check_time = $input['check_time'];// 验车时间
         $board_time = $input['board_time'];//注册日期
         $driver_name = $input['driver_name'];//司机名称
@@ -95,7 +95,7 @@ class CarController extends CommonController
         $volam = $input['volam'];//体积
         $state = $input['state'];//状态
         $remark = $input['remark'];//备注
-
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -108,7 +108,7 @@ class CarController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'车牌号不能为空！']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $this->check_group_auth($group_id,$user);
         $group = AppGroup::find()->where(['id'=>$group_id])->one();
@@ -150,9 +150,9 @@ class CarController extends CommonController
         $id = $input['id'];//令牌
         $token = $input['token'];//令牌
         $carnumber = $input['carnumber'];//车牌号
-        $cartype = $input['cartype'] ? $input['cartype'] : '1';//车长
+        $cartype = $input['cartype'] ? $input['cartype'] : '1';//车型
         $group_id = $input['group_id'];//所属公司ID
-        $control = $input['control'];//车型
+        $control = $input['control'];//温度
         $check_time = $input['check_time'];// 验车时间
         $board_time = $input['board_time'];//注册日期
         $driver_name = $input['driver_name'];//司机名称
@@ -162,7 +162,7 @@ class CarController extends CommonController
         $state = $input['state'];//状态
         $remark = $input['remark'];//备注
         // $type = $input['type'] ?? 1;//公司类别
-
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -176,11 +176,11 @@ class CarController extends CommonController
             return $this->resultInfo($data);
         }
         if(empty($cartype)){
-            $data = $this->encrypt(['code'=>400,'msg'=>'请选择车长！']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请选择车辆类型！']);
             return $this->resultInfo($data);
         }
  
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = Car::findOne($id);
         $this->check_group_auth($model->group_id,$user);
@@ -272,11 +272,12 @@ class CarController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = Car::find()->where(['id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -299,11 +300,12 @@ class CarController extends CommonController
             $input = Yii::$app->request->post();
             $token = $input['token'];
             $id = $input['id'];
+            $chitu = $input['chitu'];
             if (empty($token) || empty($id)){
                 $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
                 return $this->resultInfo($data);
             }
-            $check_result = $this->check_token($token,true);//验证令牌
+            $check_result = $this->check_token($token,true,$chitu);//验证令牌
             $user = $check_result['user'];
             $model = Car::find()->where(['id'=>$id])->one();
             $this->check_group_auth($model->group_id,$user);
@@ -326,11 +328,12 @@ class CarController extends CommonController
             $input = Yii::$app->request->post();
             $token = $input['token'];
             $id = $input['id'];
+            $chitu = $input['chitu'];
             if (empty($token) || empty($id)){
                 $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
                 return $this->resultInfo($data);
             }
-            $check_result = $this->check_token($token,true);//验证令牌
+            $check_result = $this->check_token($token,true,$chitu);//验证令牌
             $user = $check_result['user'];
             $model = Car::find()->where(['id'=>$id])->one();
             $this->check_group_auth($model->group_id,$user);

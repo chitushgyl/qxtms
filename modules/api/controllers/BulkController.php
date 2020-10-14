@@ -41,7 +41,7 @@ class BulkController extends CommonController
         $endtime = $input['endtime'] ?? '';
         $customer = $input['customer'] ?? '';
         $status = $input['orderstate'] ?? '';
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg' => '',
@@ -53,7 +53,7 @@ class BulkController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppBulk::find()
             ->alias('v')
             ->select(['v.*', 'c.all_name'])
@@ -364,6 +364,7 @@ class BulkController extends CommonController
         $customer_id = $input['customer_id'] ?? '';
         $customer_price = $input['customer_price'] ?? 0;
         $line_type = $input['line_type'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($shiftid) || empty($group_id)) {
             $data = $this->encrypt(['code' => '400', 'msg' => '参数错误']);
             return $this->resultInfo($data);
@@ -390,7 +391,7 @@ class BulkController extends CommonController
             $data = $this->encrypt(['code' => '400', 'msg' => '干线价格不能为空']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         if ($begin_info){
             $arr_startstr = json_decode($begin_info,true);
@@ -544,6 +545,7 @@ class BulkController extends CommonController
         $customer_id = $input['customer_id'] ?? '';
         $customer_price = $input['customer_price'] ?? 0;
         $line_type = $input['line_type'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($shiftid) || empty($group_id) || empty($id)) {
             $data = $this->encrypt(['code' => '400', 'msg' => '参数错误']);
             return $this->resultInfo($data);
@@ -817,7 +819,7 @@ class BulkController extends CommonController
         $weight = $input['weight'];
         $volume = $input['volume'];
         $weight_v = $volume*1000/$weight;
-        if ($weight_v <3.333){
+        if ($weight_v <2.5){
             $scale = 5;
             foreach ($shift_weight as $key => $value) {
                 if($value['price'] < $scale){
@@ -833,10 +835,10 @@ class BulkController extends CommonController
         }else{
             foreach ($shift_weight as $key => $value) {
                 if ($weight >= $value['min']){
-                    $volume_price = $value['price'] * 1000/3.333;
+                    $volume_price = $value['price'] * 1000/2.5;
                 }
                 if($weight>= $value['min'] && $weight<= $value['max']){
-                    $volume_price = $value['price'] * 1000/3.333;
+                    $volume_price = $value['price'] * 1000/2.5;
                 }
             }
 
@@ -870,7 +872,8 @@ class BulkController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
-        $check_result = $this->check_token($token,true);
+        $chitu = $input['chitu'];
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppBulk::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -1257,11 +1260,12 @@ class BulkController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppBulk::find()
             ->alias('a')
@@ -1301,12 +1305,13 @@ class BulkController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppBulk::find()
             ->alias('a')
@@ -1389,7 +1394,7 @@ class BulkController extends CommonController
         $id = $input['id'];
         $page = $input['page'] ?? 1;
         $limit = $input['limit'] ?? 10;
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg' => '',
@@ -1401,7 +1406,7 @@ class BulkController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $line = AppLine::find()->where(['id'=>$id])->asArray()->one();
         $order = AppBulk::find()->orWhere(['line_type'=>2,'paystate'=>2])->orWhere(['in','line_type',[1,3]])->andWhere(['shiftid'=>$id]);
 
@@ -1431,8 +1436,8 @@ class BulkController extends CommonController
     /*
      * 上传回单
      * */
-    public function upload_receipt($token,$id,$file){
-        $check_result = $this->check_token($token,true);
+    public function upload_receipt($token,$id,$file,$chitu){
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppBulk::findOne($id);
         $list = AppBulk::find()
@@ -1472,11 +1477,12 @@ class BulkController extends CommonController
         $token  = $input['token'];
         $id = $input['id'];
         $file = $input['tyd'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $res =  $this->upload_receipt($token,$id,$file);
+        $res =  $this->upload_receipt($token,$id,$file,$chitu);
         return $res;
     }
 
@@ -1488,6 +1494,7 @@ class BulkController extends CommonController
         $token = $input['token'];
         $id = $input['id'];
         $content = $input['content'];
+        $chitu = $input['chitu'];
         if (empty($token) && !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -1496,7 +1503,7 @@ class BulkController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'请填写异常信息']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppBulk::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -1886,7 +1893,7 @@ class BulkController extends CommonController
         $endtime = $input['endtime'] ?? '';
         $line_city = $input['line_city'] ?? '';
         $status = $input['orderstate'] ?? '';
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg' => '',
@@ -1898,7 +1905,7 @@ class BulkController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppBulk::find()
             ->alias('a')
             ->select(['a.*','b.start_time','b.trunking','b.begin_store','b.end_store','b.transfer_info','b.state','b.group_id','c.group_name','u.content'])
@@ -2037,11 +2044,12 @@ class BulkController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppBulk::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -2071,11 +2079,12 @@ class BulkController extends CommonController
         $id = $input['id'];
         $carriage_info = json_decode($input['arr'],true);//调度信息
         $type = $input['type'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
 
         $line = AppLine::findOne($id);
         $this->check_group_auth($line->group_id,$check_result['user']);

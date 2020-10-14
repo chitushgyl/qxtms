@@ -30,7 +30,7 @@ class LineLogController extends CommonController
         $group_id = $input['group_id'];
         $page = $input['page'] ?? 1;
         $limit = $input['limit'] ?? 10;
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -43,7 +43,7 @@ class LineLogController extends CommonController
             return json_encode($data);
         }
         
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppLineLog::find()
             ->alias('a')
             ->select('a.*,b.name carriage_name')
@@ -339,6 +339,7 @@ class LineLogController extends CommonController
                 $line->trunking = $list['trunking'];
                 $line->picktype = $list['picktype'];
                 $line->sendtype = $list['sendtype'];
+                $line->temperture = $list['temperture'];
                 $line->begin_store = $list['begin_store'];
                 $line->end_store = $list['end_store'];
                 $line->pickprice = $list['pickprice'];
@@ -399,6 +400,7 @@ class LineLogController extends CommonController
         $temperture = $input['temperture'] ?? '';
         $centercity = $input['centercity'] ?? '';
         $time = $input['time'];
+        $chtiu = $input['chitu'];
         if (empty($token) || !$group_id || !$id){
             $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -618,11 +620,12 @@ class LineLogController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppLineLog::find()->where(['id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -651,11 +654,12 @@ class LineLogController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppLineLog::find()->where(['id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -678,11 +682,12 @@ class LineLogController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppLineLog::find()->where(['id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -705,11 +710,12 @@ class LineLogController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
 
         $model = AppLineLog::find()->where(['id'=>$id])->asArray()->one();

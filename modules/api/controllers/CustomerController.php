@@ -30,6 +30,7 @@ class CustomerController extends CommonController
         $all_name = $input['all_name'] ?? '';
         $use_flag = $input['use_flag'] ?? '';
         $paystate = $input['paystate'] ?? '';
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -41,7 +42,7 @@ class CustomerController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $user = $check_result['user'];
 
 
@@ -99,6 +100,7 @@ class CustomerController extends CommonController
         $group_id = $input['group_id'];
         $username = $input['username'] ?? '';
         $password = $input['password'] ?? '';
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -123,7 +125,7 @@ class CustomerController extends CommonController
                 return $this->resultInfo($data);
             }
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
 
         $flag = Customer::find()->where(['group_id'=>$group_id,'all_name'=>$all_name,'delete_flag'=>'Y'])->one();
         if ($flag) {
@@ -218,6 +220,7 @@ class CustomerController extends CommonController
         $group_id = $input['group_id'];
         $username = $input['username'];
         $password  = $input['password'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -240,7 +243,7 @@ class CustomerController extends CommonController
             }
 
         }
-        $check_result = $this->check_token($token,false);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $flag = Customer::find()->where(['group_id'=>$group_id,'all_name'=>$all_name,'delete_flag'=>"Y"])->andWhere(['!=','id',$id])->one();
          if ($flag) {
@@ -309,11 +312,12 @@ class CustomerController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = Customer::find()->where(['id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -336,11 +340,12 @@ class CustomerController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = Customer::find()->where(['id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -364,11 +369,12 @@ class CustomerController extends CommonController
         $token = $input['token'];
         $id = $input['id'];
         $state = $input['state'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = Customer::find()->where(['id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -391,11 +397,12 @@ class CustomerController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $model = new CustomerContact();
         $model->name = $input['name'];
         $model->phone = $input['phone'];
@@ -518,5 +525,20 @@ class CustomerController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'删除失败']);
             return $this->resultInfo($data);
         }
+    }    
+
+    /*
+     * 获取客户列表
+     * */
+    public function actionGroup_list(){
+        $input = Yii::$app->request->post();
+        $group_id = $input['group_id'];
+        if (empty($group_id)){
+            $data = $this->encrypt(['code'=>200,'msg'=>'','data'=>[]]);
+            return $this->resultInfo($data);
+        }
+        $list = Customer::get_list($group_id);
+        $data = $this->encrypt(['code'=>200,'msg'=>'','data'=>$list]);
+        return $this->resultInfo($data);
     }
 }

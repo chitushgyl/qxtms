@@ -6,6 +6,7 @@ use app\models\AppBalance;
 use app\models\AppBulk;
 use app\models\AppCarriageList;
 use app\models\AppCartype;
+use app\models\AppCity;
 use app\models\AppCommonAddress;
 use app\models\AppCommonContacts;
 use app\models\AppGroup;
@@ -94,6 +95,7 @@ class OrderController extends CommonController
             }
         }
 
+
         if (empty($cargo_name)){
             $data = $this->encrypt(['code'=>400,'msg'=>'货品名称不能为空！']);
             return $this->resultInfo($data);
@@ -130,7 +132,7 @@ class OrderController extends CommonController
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $this->check_group_auth($group_id,$user);
 
@@ -588,6 +590,7 @@ class OrderController extends CommonController
             }
         }
 
+
         if (empty($cargo_name)){
             $data = $this->encrypt(['code'=>400,'msg'=>'货品名称不能为空！']);
             return $this->resultInfo($data);
@@ -616,7 +619,7 @@ class OrderController extends CommonController
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $this->check_group_auth($group_id,$user);
 
@@ -1056,6 +1059,7 @@ class OrderController extends CommonController
         $ordernumber = $input['ordernumber'] ?? '';
         $begintime = $input['begintime'] ?? '';
         $chitu = $input['chitu'];
+        $state = $input['state'] ?? '';
 
         $data = [
             'code' => 200,
@@ -1075,9 +1079,31 @@ class OrderController extends CommonController
             ->select(['v.*', 't.carparame','a.group_name'])
             ->leftJoin('app_cartype t', 'v.cartype=t.car_id')
             ->leftJoin('app_group a','a.id= v.group_id')
-            ->where(['v.deal_company' => $group_id, 'v.delete_flag' => 'Y']);
+            ->where(['v.deal_company' => $group_id, 'v.delete_flag' => 'Y'])
+            ->andWhere(['!=','v.order_type',12]);
         if ($ordernumber) {
             $list->andWhere(['like', 'v.ordernumber', $ordernumber]);
+        }
+        if($state){
+            if($state == 2){
+                $list->andWhere(['v.order_status'=>2]);
+            }else if($state == 3){
+                $list->andWhere(['v.order_status'=>3]);
+            }else if($state == 4){
+                $list->andWhere(['v.order_status'=>4]);
+            }else if($state == 5){
+                $list->andWhere(['v.order_status'=>5]);
+            }else if($state == 6){
+                $list->andWhere(['v.order_status'=>6]);
+            }else if($state == 7){
+                $list->andWhere(['v.order_status'=>7]);
+            }else if($state == 8){
+                $list->andWhere(['v.order_status'=>8]);
+            }else if($state == 9){
+                $list->andWhere(['v.order_status'=>9]);
+            }else if($state == 10){
+                $list->andWhere(['v.order_status'=>10]);
+            }
         }
         if ($begintime) {
             $time_s = $begintime . ' 00:00:00';
@@ -1116,7 +1142,7 @@ class OrderController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppOrder::findOne($id);
 //        $this->check_group_auth($order->deal_company,$user);
@@ -1134,58 +1160,34 @@ class OrderController extends CommonController
         }
         $payment = false;
         $res_p = true;
-        if ($chitu == 3){
-            $order->order_status = 1;
-            $order->driverinfo = '';
-            $order->deal_company = '';
-            $order->deal_company_name = '';
-            $order->deal_user = '';
-            $receive = AppReceive::find()->where(['order_id'=>$order->id,'group_id'=>$user->group_id])->one();
-
-            if ($order->money_state == 'N'){
+        $order->order_status = 1;
+        $order->driverinfo = '';
+        $order->deal_company = '';
+        $order->deal_company_name = '';
+        $order->deal_user = '';
+        $receive = AppReceive::find()->where(['order_id'=>$order->id,'group_id'=>$user->group_id])->one();
+        if ($order->money_state == 'N'){
                 $payment = AppPayment::find()->where(['group_id'=>$order->group_id,'order_id'=>$id])->one();
                 $payment->carriage_id = '';
+        }
+        $transaction= AppOrder::getDb()->beginTransaction();
+        try {
+            $res = $order->save();
+            $arr = $receive->delete();
+            if ($payment) {
+                $res_p = $payment->save();
             }
-            $transaction= AppOrder::getDb()->beginTransaction();
-            try {
-                $res = $order->save();
-                $arr = $receive->delete();
-                if ($payment) {
-                    $res_p = $payment->save();
-                }
-                if ($res && $arr && $res_p){
-                    $transaction->commit();
-                    $this->hanldlog($user->id,'取消接单'.$order->ordernumber);
-                    $data = $this->encrypt(['code'=>200,'msg'=>'取消成功']);
-                    return $this->resultInfo($data);
-                }
-            }catch (\Exception $e){
-                $transaction->rollBack();
-                $data = $this->encrypt(['code'=>400,'msg'=>'取消失败']);
-                return $this->resultInfo($data);
-            }
-        }else{
-            $order->order_status = 1;
-            $order->driverinfo = '';
-            $order->deal_company = '';
-            $order->deal_company_name = '';
-            $order->deal_user = '';
-            $receive = AppReceive::find()->where(['order_id'=>$order->id,'group_id'=>$user->group_id])->one();
-            $transaction= AppOrder::getDb()->beginTransaction();
-            try {
-                $res = $order->save();
-                $receive->delete();
+            if ($res && $arr && $res_p){
                 $transaction->commit();
                 $this->hanldlog($user->id,'取消接单'.$order->ordernumber);
                 $data = $this->encrypt(['code'=>200,'msg'=>'取消成功']);
                 return $this->resultInfo($data);
-            }catch(\Exception $e){
-                $transaction->rollBack();
-                $data = $this->encrypt(['code'=>400,'msg'=>'取消失败']);
-                return $this->resultInfo($data);
             }
+        }catch (\Exception $e){
+            $transaction->rollBack();
+            $data = $this->encrypt(['code'=>400,'msg'=>'取消失败']);
+            return $this->resultInfo($data);
         }
-
     }
 
     /*
@@ -1195,11 +1197,12 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppOrder::find()->where(['id'=>$id])->asArray()->one();
         unset($order['id']);
@@ -1273,11 +1276,12 @@ class OrderController extends CommonController
           $input = Yii::$app->request->post();
           $token = $input['token'];
           $id = $input['id'];
+          $chitu = $input['chitu'];
           if (empty($token) || empty($id)){
               $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
               return $this->resultInfo($data);
           }
-          $check_result = $this->check_token($token,true);
+          $check_result = $this->check_token($token,true,$chitu);
           $user = $check_result['user'];
           $order = AppOrder::findOne($id);
           $this->check_group_auth($order->group_id,$user);
@@ -1312,11 +1316,12 @@ class OrderController extends CommonController
           $input = Yii::$app->request->post();
           $token = $input['token'];
           $id = $input['id'];
+          $chitu = $input['chitu'];
           if(empty($token) || empty($id)){
               $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
               return $this->resultInfo($data);
           }
-          $check_result = $this->check_token($token,false);
+          $check_result = $this->check_token($token,true,$chitu);
           $user = $check_result['user'];
           $take_order = AppOrder::findOne($id);
 //          $copy_order = AppOrder::find()->where(['line_id'=>$id])->asArray()->one();
@@ -1387,9 +1392,12 @@ class OrderController extends CommonController
         $group_id = $input['group_id'];
         $page = $input['page'] ?? 1;
         $limit = $input['limit'] ?? 10;
-        $ordernumber = $input['ordernumber'] ?? '';
+        $keyword = $input['keyword'] ?? '';
         $begintime = $input['begintime'] ?? '';
         $chitu = $input['chitu'];
+        $state = $input['state'] ?? '';
+        $startcity = $input['startcity'] ?? '';
+        $endcity = $input['endcity'] ?? '';
 
         $data = [
             'code' => 200,
@@ -1412,8 +1420,34 @@ class OrderController extends CommonController
             ->leftJoin('app_customer a','a.id= v.company_id')
             ->where(['v.group_id' => $group_id, 'v.delete_flag' => 'Y','v.main_order'=>1,'v.line_status'=>1]);
         $group = AppGroup::findOne($user->parent_group_id);
-        if ($ordernumber) {
-            $list->andWhere(['like', 'v.ordernumber', $ordernumber]);
+        if ($keyword) {
+            $list->andWhere(['like', 'v.ordernumber', $keyword])
+                 ->orWhere(['like','a.all_name',$keyword]);
+        }
+        if($state){
+           if ($state==1){
+               $list->andWhere(['v.order_status'=>1,'v.order_stage'=>1]);
+           }else if($state == 2){
+               $list->andWhere(['v.order_status'=>1,'v.order_stage'=>2]);
+           }else if($state == 3){
+               $list->andWhere(['v.order_status'=>1,'v.order_stage'=>3]);
+           }else if($state == 4){
+               $list->andWhere(['v.order_status'=>1,'v.order_stage'=>4]);
+           }else if($state == 5){
+               $list->andWhere(['v.order_status'=>5]);
+           }else{
+               $list->andWhere(['v.order_status'=>6]);
+           }
+        }
+        if ($startcity && $endcity){
+            $list->andWhere(['like','v.startcity',$startcity])
+                 ->andWhere(['like','v.endcity',$endcity]);
+        }else{
+            if ($startcity){
+                $list->andWhere(['like','v.startcity',$startcity]);
+            }else if($endcity){
+                $list->andWhere(['like','v.endcity',$endcity]);
+            }
         }
         if ($begintime) {
             $time_s = $begintime . ' 00:00:00';
@@ -1424,7 +1458,7 @@ class OrderController extends CommonController
         $count = $list->count();
         $list = $list->offset(($page - 1) * $limit)
             ->limit($limit)
-            ->orderBy(['v.time_start' => SORT_DESC])
+            ->orderBy([new \yii\db\Expression('FIELD (order_status, 1,2,3,4,5,6,7,8)'),new \yii\db\Expression('FIELD (order_stage, 1,2,3,4)'),'v.time_start' => SORT_DESC])
             ->asArray()
             ->all();
         foreach ($list as $k => $v) {
@@ -1457,7 +1491,7 @@ class OrderController extends CommonController
             return $this->resultInfo($data);
         }
 
-            $check_result = $this->check_token($token,true);
+            $check_result = $this->check_token($token,true,$chitu);
             $user = $check_result['user'];
             $order = AppOrder::findOne($id);
             $this->check_group_auth($order->group_id,$user);
@@ -1484,7 +1518,7 @@ class OrderController extends CommonController
 
                 //判断是否为复制订单，如果是删除复制订单，并修改原始订单为未确认
                 if($order->line_id){
-                     if($order->order_type == 5 ||$order->order_type == 8){
+                     if($order->order_type == 5 ||$order->order_type == 8 || $order->order_type == 11){
                          $order->delete();
                          $copy_order = AppOrder::findOne($order->line_id);
                          $copy_order->copy= 1;
@@ -1540,12 +1574,13 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppBulk::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -1599,11 +1634,12 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $order = AppOrder::find()->where(['id'=>$id])->one();
         $this->check_group_auth($order->group_id,$user);
@@ -1636,11 +1672,12 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppOrder::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -1857,6 +1894,7 @@ class OrderController extends CommonController
         $line_price = $input['line_price'];
         $startstr = $input['startstr'];
         $endstr = $input['endstr'];
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -1874,7 +1912,7 @@ class OrderController extends CommonController
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $order = AppOrder::find()->where(['id'=>$id])->one();
         $this->check_group_auth($order->group_id,$user);
@@ -1882,9 +1920,12 @@ class OrderController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'订单状态已改变，请刷新重试!']);
             return $this->resultInfo($data);
         }
-        if($order->copy != 1){
-            $data = $this->encrypt(['code'=>400,'msg'=>'接取的订单不可以上线']);
-            return $this->resultInfo($data);
+        if ($order->line_id){
+            $copy_order = AppOrder::findOne($order->line_id);
+            if($copy_order->copy != 1){
+                $data = $this->encrypt(['code'=>400,'msg'=>'接取的订单不可以上线']);
+                return $this->resultInfo($data);
+            }
         }
         $payment = true;
         $order->money_state = 'N';
@@ -1924,6 +1965,7 @@ class OrderController extends CommonController
         $line_price = $input['line_price'];
         $startstr = $input['startstr'];
         $endstr = $input['endstr'];
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -1940,7 +1982,7 @@ class OrderController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'送货地址不能为空']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $order = AppOrder::find()->where(['id'=>$id])->one();
         $this->check_group_auth($order->group_id,$user);
@@ -1948,9 +1990,12 @@ class OrderController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'订单状态已改变，请刷新重试!']);
             return $this->resultInfo($data);
         }
-        if($order->copy != 1){
-            $data = $this->encrypt(['code'=>400,'msg'=>'接取的订单不可以上线']);
-            return $this->resultInfo($data);
+        if ($order->line_id){
+            $copy_order = AppOrder::findOne($order->line_id);
+            if($copy_order->copy != 1){
+                $data = $this->encrypt(['code'=>400,'msg'=>'接取的订单不可以上线']);
+                return $this->resultInfo($data);
+            }
         }
         $payment = true;
         $order->money_state = 'N';
@@ -1991,11 +2036,12 @@ class OrderController extends CommonController
           $id = $input['id'];
           $token = $input['token'];
           $arr = json_decode($input['arr'],true);
+          $chitu = $input['chitu'];
           if (empty($id) || empty($token)){
               $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
               return $this->resultInfo($data);
           }
-          $check_result = $this->check_token($token,true);
+          $check_result = $this->check_token($token,true,$chitu);
           $user = $check_result['user'];
           $order = AppOrder::findOne($id);
           $this->check_group_auth($order->group_id,$user);
@@ -2065,11 +2111,12 @@ class OrderController extends CommonController
            $input = Yii::$app->request->post();
            $token = $input['token'];
            $id = $input['id'];
+           $chitu = $input['chitu'];
            if (empty($token) || empty($id)){
                $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
                return $this->resultInfo($data);
            }
-           $check_result = $this->check_token($token,true);
+           $check_result = $this->check_token($token,true,$chitu);
            $user = $check_result['user'];
            $order = AppOrder::find()->select('id,order_status,split_id,delete_flag,use_flag')->where(['split_id'=>$id,'delete_flag'=>'Y','use_flag'=>'Y'])->asArray()->all();
            $this->check_group_auth($order->group_id,$user);
@@ -2133,6 +2180,7 @@ class OrderController extends CommonController
         $sendtype = $input['sendtype'];
         $price = $input['price'] ?? 0;
         $total_price = $input['total_price'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -2157,6 +2205,7 @@ class OrderController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'请选择车型']);
             return $this->resultInfo($data);
         }
+
 
         if (empty($cargo_name)){
             $data = $this->encrypt(['code'=>400,'msg'=>'货品名称不能为空！']);
@@ -2186,7 +2235,7 @@ class OrderController extends CommonController
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $this->check_group_auth($group_id,$user);
 
@@ -2302,11 +2351,12 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppOrder::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -2337,6 +2387,8 @@ class OrderController extends CommonController
         $limit = $input['limit'] ?? 10;
         $ordernumber = $input['ordernumber'] ?? '';
         $begintime = $input['begintime'] ?? '';
+        $startcity = $input['startcity'] ?? '';
+        $endcity = $input['endcity'] ?? '';
 
         $data = [
             'code' => 200,
@@ -2356,7 +2408,16 @@ class OrderController extends CommonController
             ->select(['v.*','t.carparame'])
             ->leftJoin('app_cartype t','v.cartype=t.car_id')
             ->where(['v.line_status'=>2,'v.order_status'=>1,'v.delete_flag'=>'Y']);
-
+        if ($startcity && $endcity){
+            $list->andWhere(['like','v.startcity',$startcity])
+                ->andWhere(['like','v.endcity',$endcity]);
+        }else{
+            if ($startcity){
+                $list->andWhere(['like','v.startcity',$startcity]);
+            }else if($endcity){
+                $list->andWhere(['like','v.endcity',$endcity]);
+            }
+        }
         if($ordernumber){
             $list->andWhere(['like','v.ordernumber',$ordernumber]);
         }
@@ -2400,6 +2461,7 @@ class OrderController extends CommonController
         $line_end_city = $input['line_end_city'] ?? '';
         $startarea = $input['startarea'] ?? '';
         $endarea = $input['endarea'] ?? '';
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -2411,7 +2473,7 @@ class OrderController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppLine::find();
         if ($line_start_city) {
             $list->andWhere(['like','startcity',$line_start_city]);
@@ -2473,7 +2535,7 @@ class OrderController extends CommonController
         $begintime = $input['begintime'] ?? '';
         $startcity = $input['startcity'] ?? '';
         $endcity = $input['endcity'] ??'';
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg' => '',
@@ -2486,7 +2548,7 @@ class OrderController extends CommonController
             return json_encode($data);
         }
 
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppOrder::find()
             ->alias('v')
             ->select(['v.*', 't.carparame'])
@@ -2540,11 +2602,12 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu  = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppOrder::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -2575,6 +2638,7 @@ class OrderController extends CommonController
 //         $ids =  explode(',',$ids);
         $type = $input['type'];
         $price = $input['price'];
+        $chitu = $input['chitu'];
         $carriage_info = json_decode($input['arr'],true);
         $order_type = $input['order_type'];
         $picktype = $input['picktype'] ?? 2;
@@ -2584,7 +2648,7 @@ class OrderController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user= $check_result['user'];
 
         $list = AppOrder::find()->where(['in','id',$ids])->andWhere(['group_id'=>$group_id])->asArray()->all();
@@ -2593,15 +2657,22 @@ class OrderController extends CommonController
         $number = $this->get_params($ids,'number');
         $number1 = $this->get_params($ids,'number2');
         $startstr = $endstr = $temperture = [];
-
+        $flag = true;
         foreach ($list as $key =>$value){
 
             $startstr = array_merge($startstr,json_decode($value['startstr'],true));
             $endstr = array_merge($endstr,json_decode($value['endstr'],true));
             $order['startcity'] = $value['startcity'];
             $order['endcity']   = $value['endcity'];
+            if ($value['order_type'] == 11 && count($ids)>1){
+                $flag = false;
+                break;
+            }
         }
-
+        if (!$flag){
+            $data = $this->encrypt(['code'=>400,'msg'=>'请单独调度市配订单']);
+            return $this->resultInfo($data);
+        }
         $startstr = array_unique($startstr,SORT_REGULAR);
         $endstr = array_unique($endstr,SORT_REGULAR);
 //        $temperture = array_unique($temperture,SORT_REGULAR);
@@ -2951,11 +3022,12 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppOrder::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -2983,11 +3055,12 @@ class OrderController extends CommonController
         $token = $input['token'];
         $id = $input['id'];
         $pick_id = $input['pick_id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id) || empty($pick_id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $pickorder = AppOrder::findOne($id);
         $this->check_group_auth($pickorder->group_id,$user);
@@ -3078,7 +3151,7 @@ class OrderController extends CommonController
         $limit = $input['limit'] ?? 10;
         $ordernumber = $input['ordernumber'] ?? '';
         $begintime = $input['begintime'] ?? '';
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg' => '',
@@ -3091,7 +3164,7 @@ class OrderController extends CommonController
             return json_encode($data);
         }
 
-       $check_result = $this->check_token_list($token);//验证令牌
+       $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppMegerOrder::find()
             ->alias('v')
             ->select(['v.*', 't.carparame','b.name','c.shiftnumber'])
@@ -3148,7 +3221,7 @@ class OrderController extends CommonController
         $limit = $input['limit'] ?? 10;
         $ordernumber = $input['ordernumber'] ?? '';
         $begintime = $input['begintime'] ?? '';
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg' => '',
@@ -3161,7 +3234,7 @@ class OrderController extends CommonController
             return json_encode($data);
         }
 
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppOrder::find()
             ->alias('v')
             ->select(['v.*', 't.carparame'])
@@ -3202,11 +3275,12 @@ class OrderController extends CommonController
           $input = Yii::$app->request->post();
           $token = $input['token'];
           $id = $input['id'];
+          $chitu = $input['chitu'];
           if (empty($token) || empty($id)){
               $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
               return $this->resultInfo($data);
           }
-          $check_result = $this->check_token($token,true);
+          $check_result = $this->check_token($token,true,$chitu);
           $user = $check_result['user'];
           $merage_order = AppMegerOrder::findOne($id);
           if ($merage_order->state == 8){
@@ -3287,11 +3361,12 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $merage_order = AppOrder::findOne($id);
         $this->check_group_auth($merage_order->group_id,$user);
@@ -3330,6 +3405,7 @@ class OrderController extends CommonController
         $ordernumber = $input['ordernumber'] ?? '';
         $begintime = $input['begintime'] ?? '';
         $chitu = $input['chitu'];
+        $state = $input['state']?? '';
 
         $data = [
             'code' => 200,
@@ -3352,7 +3428,25 @@ class OrderController extends CommonController
         if ($ordernumber) {
             $list->andWhere(['like', 'v.ordernumber', $ordernumber]);
         }
-
+        if($state){
+            if ($state==1){
+                $list->andWhere(['v.order_status'=>1]);
+            }else if($state == 2){
+                $list->andWhere(['v.order_status'=>2]);
+            }else if($state == 3){
+                $list->andWhere(['v.order_status'=>3]);
+            }else if($state == 4){
+                $list->andWhere(['v.order_status'=>4]);
+            }else if($state == 5){
+                $list->andWhere(['v.order_status'=>5]);
+            }elseif($state == 6){
+                $list->andWhere(['v.order_status'=>6]);
+            }else if($state == 7){
+                $list->andWhere(['v.order_status'=>7]);
+            }else{
+                $list->andWhere(['v.order_status'=>8]);
+            }
+        }
         $count = $list->count();
         $list = $list->offset(($page - 1) * $limit)
             ->limit($limit)
@@ -3381,11 +3475,12 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppOrder::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -3468,7 +3563,8 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
-        $check_result = $this->check_token($token,true);
+        $chitu = $input['chitu'];
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppOrder::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -3478,6 +3574,7 @@ class OrderController extends CommonController
         }
         $split_id = [];
         $count_id = '';
+        $res_m = $list_city = true;
         if($order->main_order==1){
             if($order->line_id){
                 if($order->order_type == 5 || $order->order_type == 6){
@@ -3488,11 +3585,27 @@ class OrderController extends CommonController
                     $main_order->orderstate = 4;
                 }
             }
+
             $order->order_status = 6;
-            if ($main_order){
-                $res_m = $main_order->save();
+            $transaction= AppOrder::getDb()->beginTransaction();
+            try {
+                if($order->order_type == 11){
+//                $city_order = AppCity::find()->where(['in','id',json_decode($order->ids,true)])->asArray()->all();
+                    $list_city = AppCity::updateAll(['order_state'=>4],['in', 'id', json_decode($order->ids,true)]);
+                }
+                if ($main_order){
+                    $res_m = $main_order->save();
+                }
+                $res_o = $order->save();
+                $transaction->commit();
+                $this->hanldlog($user->id,'完成订单:'.$order->ordernumber);
+                $data = $this->encrypt(['code'=>200,'msg'=>'订单已完成']);
+                return $this->resultInfo($data);
+            }catch(\Exception $e){
+                $transaction->rollBack();
+                $data = $this->encrypt(['code'=>400,'msg'=>'操作失败']);
+                return $this->resultInfo($data);
             }
-            $res_o = $order->save();
             if($res_o){
                 $this->hanldlog($user->id,'完成订单:'.$order->ordernumber);
                 $data = $this->encrypt(['code'=>200,'msg'=>'订单已完成']);
@@ -3547,11 +3660,12 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
 
         $order = AppOrder::findOne($id);
@@ -3600,7 +3714,7 @@ class OrderController extends CommonController
         $customer_id = $input['customer_id'];
         $customer_price = $input['customer_price'] ?? 0;
         $line_type = $input['line_type'];
-
+        $chitu = $input['chitu'];
         if (empty($token) || empty($shiftid) || empty($group_id)) {
             $data = $this->encrypt(['code' => '400', 'msg' => '参数错误']);
             return $this->resultInfo($data);
@@ -3625,7 +3739,7 @@ class OrderController extends CommonController
             $data = $this->encrypt(['code' => '400', 'msg' => '干线价格不能为空']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         if ($begin_info){
             $arr_startstr = json_decode($begin_info,true);
@@ -3842,11 +3956,12 @@ class OrderController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppBulk::find()
             ->alias('a')

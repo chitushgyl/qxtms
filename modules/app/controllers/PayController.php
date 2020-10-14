@@ -10,6 +10,7 @@ use app\models\AppOrder;
 use app\models\AppPayment;
 use app\models\AppPaymessage;
 use app\models\AppReceive;
+use app\models\Car;
 use app\models\User;
 use Yii;
 use WxPayApi as WxPayQ;
@@ -56,7 +57,7 @@ class PayController extends CommonController{
         $subject = '整车订单支付';
         $out_trade_no = $data['ordernumber'];
         $price = $data['price'];
-        $notifyurl = "http://testct.56cold.com/app/pay/znotify";
+        $notifyurl = $this->url."/app/pay/znotify";
         $aop->alipayrsaPublicKey = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuQzIBEB5B/JBGh4mqr2uJp6NplptuW7p7ZZ+uGeC8TZtGpjWi7WIuI+pTYKM4XUM4HuwdyfuAqvePjM2ch/dw4JW/XOC/3Ww4QY2OvisiTwqziArBFze+ehgCXjiWVyMUmUf12/qkGnf4fHlKC9NqVQewhLcfPa2kpQVXokx3l0tuclDo1t5+1qi1b33dgscyQ+Xg/4fI/G41kwvfIU+t9unMqP6mbXcBec7z5EDAJNmDU5zGgRaQgupSY35BBjW8YVYFxMXL4VnNX1r5wW90ALB288e+4/WDrjTz5nu5yeRUqBEAto3xDb5evhxXHliGJMqwd7zqXQv7Q+iVIPpXQIDAQAB';
         $bizcontent = json_encode([
             'body' => '整车支付宝支付',
@@ -166,7 +167,7 @@ class PayController extends CommonController{
         require_once(Yii::getAlias('@vendor') . '/wxAppPay/weixin.php');
         $body = '整车订单支付：'.$data['ordernumber'];
         $out_trade_no = $data['ordernumber'];
-        $noturl = 'http://testct.56cold.com/app/pay/wxpaynofity';
+        $noturl = $this->url.'/app/pay/wxpaynofity';
         $appid = 'wxe2d6b74ba8fa43e7';
         $mch_id = '1481595522';
         $notify_url = $noturl;
@@ -369,7 +370,7 @@ class PayController extends CommonController{
         //运单支付
         $subject = '零担订单支付';
         $out_trade_no = $order->ordernumber;
-        $notifyurl = "http://testct.56cold.com/app/pay/bnotify";
+        $notifyurl = $this->url."/app/pay/bnotify";
         $aop->alipayrsaPublicKey = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuQzIBEB5B/JBGh4mqr2uJp6NplptuW7p7ZZ+uGeC8TZtGpjWi7WIuI+pTYKM4XUM4HuwdyfuAqvePjM2ch/dw4JW/XOC/3Ww4QY2OvisiTwqziArBFze+ehgCXjiWVyMUmUf12/qkGnf4fHlKC9NqVQewhLcfPa2kpQVXokx3l0tuclDo1t5+1qi1b33dgscyQ+Xg/4fI/G41kwvfIU+t9unMqP6mbXcBec7z5EDAJNmDU5zGgRaQgupSY35BBjW8YVYFxMXL4VnNX1r5wW90ALB288e+4/WDrjTz5nu5yeRUqBEAto3xDb5evhxXHliGJMqwd7zqXQv7Q+iVIPpXQIDAQAB';
         $bizcontent = json_encode([
             'body' => '零担支付宝支付',
@@ -487,7 +488,7 @@ class PayController extends CommonController{
         $body = '零担订单支付：'.$data['ordernumber'];
         $out_trade_no = $data['ordernumber'];
         $price = $data['price'];
-        $noturl = 'http://testct.56cold.com/app/pay/bulknofity';
+        $noturl = $this->url.'/app/pay/bulknofity';
         $appid = 'wxe2d6b74ba8fa43e7';
         $mch_id = '1481595522';
         $notify_url = $noturl;
@@ -708,7 +709,8 @@ class PayController extends CommonController{
             'product_code' => 'QUICK_MSECURITY_PAY',
             'passback_params' => $user->id
         ]);
-        $request->setNotifyUrl("http://testct.56cold.com/app/pay/alipaynotify");
+
+        $request->setNotifyUrl($this->url."/app/pay/alipaynotify");
         $request->setBizContent($bizcontent);
         //这里和普通的接口调用不同，使用的是sdkExecute
         $response = $aop->sdkExecute($request);
@@ -785,7 +787,8 @@ class PayController extends CommonController{
         $user = $check_result['user'];
         $appid = 'wxe2d6b74ba8fa43e7';
         $mch_id = '1481595522';
-        $notify_url = 'http://testct.56cold.com/app/pay/wechat_notify';
+
+        $notify_url = $this->url.'/app/pay/wechat_notify';
         $key = 'FdzK0xScm6GRS0zUW4LRYOak5rZA9k3o';
         $wechatAppPay = new \wxAppPay($appid, $mch_id, $notify_url, $key);
         $params['body'] = '微信余额充值';                       //商品描述
@@ -908,6 +911,137 @@ class PayController extends CommonController{
             }
         } else {
             echo "fail";
+        }
+    }
+
+
+    /*
+     * 指定车辆下单支付宝支付
+     * */
+    public function actionAlipay_car(){
+        $input = Yii::$app->request->post();
+        // 令牌
+        $token = $input["token"];
+        // 订单ID
+        $id = $input['id'];
+        // 支付金额
+        $price = $input['price'];
+        if(empty($token) || empty($id)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        if (empty($price)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填写价格']);
+            return $this->resultInfo($data);
+        }
+        $check_result = $this->check_token($token,false);//验证令牌
+        $user_id = $check_result['user']->id;
+        $data = array();
+        $order = AppOrder::findOne($id);
+        $data['price'] = $price;
+        $data['ordernumber'] = $order->ordernumber;
+        require_once(Yii::getAlias('@vendor') . '/alipay/aop/AopClient.php');
+        require_once(Yii::getAlias('@vendor') . '/alipay/aop/request/AlipayTradeAppPayRequest.php');
+        $aop = new \AopClient();
+        $request = new \AlipayTradeAppPayRequest();
+        $aop->gatewayUrl = "https://openapi.alipay.com/gateway.do";
+        $aop->appId = "2017052307318743";
+        $aop->rsaPrivateKey = 'MIIEpAIBAAKCAQEAuWqafyecwj1VxcHQjFHrPIqhKrfMPjQRVRTs7/PvGlCXOxV34KaAop4XWEBKgvWhdQX2JkMDLSwPkH790TBJVS84/zQ6sjanpHjgT82/AimuS+/Vk8pB/pAfnOnRN3dhe6y2i9kzJPU62Uj9qn5jJXbWJhyM16Zxdk7GBOChis3C3KvB2WN8qAQawqfUvgHRm/yUgNfVUutKRMdDdQxQypwxkEP50+U9qKeSQecZRyo6xmJ5CWbULQ7FpV5q6lmM7SbyBuyDVk7z4itLIgE8qpt6B3cp9Qm3U3f6DoVJA2LAjinP4v6kNVb/f5qu8VpmR0DD+dRJ1+ujDz1EC/f/lwIDAQABAoIBAHrS0DcM8X2GDcxrQA/DsDUxi+N1T1mhOh4HN5EYILpoylU8OmXZRfrzCHnQVMt9lQ+k/FKKL4970W+hf9dTyjAgkPwVCBDHvbNo0wZqP25aV/g7jlpRL/hGVnqmNI4uiafYWDA5l/SScgI/pLGM+XZ2yxMB9JZhzmVVdz0B5GDCHcjQUkY3//8Tpgw6ylngrq67KjWDbZPAZQHcpj/hdYPOu7Z1kXp30jtdEZi6S+7ZJe/AWMSuEtwWsM53ZOyxqPjSwbW8XfWHHbG3yKF6sngCmwRpwX5rp1EjSsVhA5rbpCM0jbYCKp977XwkGtG6xAOydZdz0WHyirDUTA3PMTECgYEA4lzvyfcg0SyaOWVszwxcWntVm6sQG7deaSlW92Urhy7qaDnv4Ad8TEe0M0QGVllnZUDJA3x8NzoD5DlFROUGZpI/uJk5a0dQlvMbyzS2rx2v4TP19Xm5D7iQk0RK5Zry0K/Fj1kZusIVm3qwsl1DlunAfGipZ1TV0C7QNUJcW0kCgYEA0bE/3ljnSPsKjpc+projOuaLqf7+0x3ITaYle60MbwZrjUnX3cSwbqN3Iu12Npa3mI+RwTyDifFgWB/8hFoqTecFGDnxRa1e7DLlJX9FkIMtoroVsDJUMD+HUx01t9V8fEqVPNyRmnbFyXfdHrRb7zYefwuPZcoE18reADc9o98CgYB1zDl5F+L7F8P2ZIK4SM1yxMYrKV1LnyRBg6LfQcXiJpcTwDrFkf+sTpBHMXo+y23UMl+pMcoOj2FhDjCvBqRLEoaYkRxhaI5Wz5LCL991x/Q0NO8lXL/in4CVMq/rRrRfx2j/DTYni0LlU3bKi2BWE7T4yRqHTI2sNgBiBvO7CQKBgQCDsHNR6jdmR/J7VlTMVH2nkf4IRtI2N7ABw+QqZaU3XKrS0ps09T9wXEyHrOXepoyqzQ9WcfCSAvrknUHyxMVoozs52bnCbnz8jYIHKITBmwBf/8l7HEBvBJayBdgkmXhSfmx3CnaOsSTJv/MoQ1CxTCWe1924qUSdWRROwmJ9tQKBgQCgWUnO0z1O46N1p66gcA0NrRMFsncotg42MipvUpCrMN6lJ80/H7Kj1tGOizJazLXPKN9NKl/lco0xJyAyZS4vFacZXbH2OO0jHyfovPblSY5O10g3d1PC4mbZ/wd4HU4QVO21+U5dIH/HPubhOGQWcpAO+3Fqxx7VFuaZPbsC7g==';
+        $aop->format = "json";
+        $aop->charset = "UTF-8";
+        $aop->signType = "RSA2";
+//        $config = Yii::$app->params['configpay'];
+//        $aop = new \AlipayTradeService($config);
+        //运单支付
+        $subject = '整车订单支付';
+        $out_trade_no = $data['ordernumber'];
+        $price = $data['price'];
+        $notifyurl = $this->url."/app/pay/car_notify";
+        $aop->alipayrsaPublicKey = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuQzIBEB5B/JBGh4mqr2uJp6NplptuW7p7ZZ+uGeC8TZtGpjWi7WIuI+pTYKM4XUM4HuwdyfuAqvePjM2ch/dw4JW/XOC/3Ww4QY2OvisiTwqziArBFze+ehgCXjiWVyMUmUf12/qkGnf4fHlKC9NqVQewhLcfPa2kpQVXokx3l0tuclDo1t5+1qi1b33dgscyQ+Xg/4fI/G41kwvfIU+t9unMqP6mbXcBec7z5EDAJNmDU5zGgRaQgupSY35BBjW8YVYFxMXL4VnNX1r5wW90ALB288e+4/WDrjTz5nu5yeRUqBEAto3xDb5evhxXHliGJMqwd7zqXQv7Q+iVIPpXQIDAQAB';
+        $bizcontent = json_encode([
+            'body' => '整车支付宝支付',
+            'subject' => $subject,
+            'out_trade_no' => $out_trade_no,//此订单号为商户唯一订单号
+            'total_amount' => $price,//保留两位小数
+            'product_code' => 'QUICK_MSECURITY_PAY',
+            'passback_params' => $user_id
+        ]);
+        $request->setNotifyUrl($notifyurl);
+        $request->setBizContent($bizcontent);
+        //这里和普通的接口调用不同，使用的是sdkExecute
+        $response = $aop->sdkExecute($request);
+        return $response;
+    }
+
+    /*
+     * 指定车辆支付回调
+     * */
+    public function actionCar_notify(){
+//        file_put_contents(Yii::getAlias('@vendor').'/alipay.txt',$_POST);
+        require_once(Yii::getAlias('@vendor').'/alipay/aop/AopClient.php');
+        $aop = new \AopClient();
+        $aop->alipayrsaPublicKey = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuQzIBEB5B/JBGh4mqr2uJp6NplptuW7p7ZZ+uGeC8TZtGpjWi7WIuI+pTYKM4XUM4HuwdyfuAqvePjM2ch/dw4JW/XOC/3Ww4QY2OvisiTwqziArBFze+ehgCXjiWVyMUmUf12/qkGnf4fHlKC9NqVQewhLcfPa2kpQVXokx3l0tuclDo1t5+1qi1b33dgscyQ+Xg/4fI/G41kwvfIU+t9unMqP6mbXcBec7z5EDAJNmDU5zGgRaQgupSY35BBjW8YVYFxMXL4VnNX1r5wW90ALB288e+4/WDrjTz5nu5yeRUqBEAto3xDb5evhxXHliGJMqwd7zqXQv7Q+iVIPpXQIDAQAB';
+        $flag = $aop->rsaCheckV1($_POST, NULL, "RSA2");
+        if ($_POST['trade_status'] === 'TRADE_SUCCESS') {
+            $order = AppOrder::find()->where(['ordernumber' => $_POST['out_trade_no']])->one();
+            $pay = new AppPaymessage();
+            $pay->orderid = $_POST['out_trade_no'];//订单号
+            $pay->paynum = $_POST['total_amount'];//价格
+            $pay->platformorderid = $_POST['trade_no'];//支付宝交易号
+            $pay->create_time = date('Y-m-d H:i:s', time());
+            $pay->userid = $_POST['passback_params'];//客户ID
+            $pay->payname = $_POST['buyer_logon_id'];//支付宝账号
+            $pay->paytype = 1;
+            $pay->type = 2;
+            $pay->state = 1;
+            $pay->group_id = $order->group_id;
+
+            $order->pay_status = 2;
+            $order->line_price = $_POST['total_amount'];
+            $order->money_state = 'Y';
+            $order->line_status = 2;
+            $car_id = json_decode($order->driverinfo,true)[0]['id'];
+            $car_list = Car::findOne($car_id);
+            $car_list->line_state = 1;
+
+            $balance = new AppBalance();
+            $balance->pay_money = $_POST['total_amount'];
+            $balance->order_content = '整车支付宝支付';
+            $balance->action_type = 3;
+            $balance->userid = $_POST['passback_params'];
+            $balance->create_time = date('Y-m-d H:i:s', time());
+            $balance->ordertype = 1;
+            $balance->orderid = $order->id;
+            $balance->group_id = $order->group_id;
+            $transaction = Yii::$app->db->beginTransaction();
+
+            $payment = new AppPayment();
+            $payment->group_id = $order->group_id;
+            $payment->order_id = $order->id;
+            $payment->pay_type = 4;
+            $payment->status = 3;
+            $payment->al_pay = $_POST['total_amount'];
+            $payment->truepay = $_POST['total_amount'];
+            $payment->create_user_id = $_POST['passback_params'];
+            $payment->carriage_name = '赤途';
+            $payment->carriage_id = 25;
+            $payment->pay_price = $_POST['total_amount'];
+            try {
+                $res = $pay->save();
+                $res_o = $order->save();
+                $res_b = $balance->save();
+                $res_p = $payment->save();
+                $res_c = $car_list->save();
+                if ($res && $res_o && $res_b && $res_p && $res_c) {
+                    $transaction->commit();
+                    echo 'success';
+                }
+            } catch (\Exception $e) {
+                $transaction->rollBack();
+                echo 'fail';
+            }
+        } else {
+            echo 'fail';
         }
     }
 }

@@ -3,6 +3,7 @@
 namespace app\models;
 
 use Yii;
+use yii\behaviors\TimestampBehavior;
 
 /**
  * This is the model class for table "app_order_carriage".
@@ -51,7 +52,21 @@ class AppOrderCarriage extends \yii\db\ActiveRecord
             [['contant', 'carnumber', 'tel'], 'string', 'max' => 20],
         ];
     }
-
+    /**
+     * @inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => TimestampBehavior::className(),
+                'createdAtAttribute' => 'create_time',
+                'updatedAtAttribute' => 'update_time',
+                //'value'   => new Expression('NOW()'),
+                'value'   => function(){return date('Y-m-d H:i:s',time());},
+            ],
+        ];
+    }
     /**
      * {@inheritdoc}
      */

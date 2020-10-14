@@ -289,6 +289,7 @@ class PlatformController extends CommonController
         $total_price = $input['total_price'];
         $order_type = $input['order_type'];
         $paytype = $input['paytype'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)) {
             $data = $this->encrypt(['code' => 400, 'msg' => '参数错误']);
             return $this->resultInfo($data);
@@ -353,7 +354,7 @@ class PlatformController extends CommonController
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token, true);//验证令牌
+        $check_result = $this->check_token($token, true,$chitu);//验证令牌
         $user = $check_result['user'];
         $this->check_group_auth($group_id, $user);
 
@@ -496,6 +497,7 @@ class PlatformController extends CommonController
         $line_end_city = $input['line_end_city'] ?? '';
         $startarea = $input['startarea'] ?? '';
         $endarea = $input['endarea'] ?? '';
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -507,7 +509,7 @@ class PlatformController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppLine::find();
         if ($line_start_city) {
             $list->andWhere(['like','startcity',$line_start_city]);

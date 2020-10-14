@@ -49,7 +49,7 @@ class VehicalController extends CommonController
         $customer = $input['customer'] ?? '';
         $status = $input['order_status'] ?? '';
         $num = $input['num'] ?? '';
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -63,7 +63,7 @@ class VehicalController extends CommonController
         }
 //        $list = AppVehical::find()
 //            ->where(['delete_flag'=>'Y','order_status'=>$status]);
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppVehical::find()
             ->alias('v')
             ->select(['v.*','c.all_name','t.carparame'])
@@ -134,7 +134,7 @@ class VehicalController extends CommonController
         $otherprice = $input['otherprice'] ?? 0;
         $more_price = $input['more_price'] ?? 0;
         $order_own = $input['order_own'];
-
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -200,7 +200,7 @@ class VehicalController extends CommonController
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $this->check_group_auth($group_id,$user);
 
@@ -475,7 +475,7 @@ class VehicalController extends CommonController
         $otherprice = $input['otherprice'] ?? 0;
         $more_price = $input['more_price'] ?? 0;
         $order_own = $input['order_own'] ?? 1;
-
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -541,7 +541,7 @@ class VehicalController extends CommonController
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $this->check_group_auth($order->group_id,$user);
 
@@ -978,6 +978,7 @@ class VehicalController extends CommonController
         $token = $input['token'];
         $line_price = $input['line_price'];
         $money_state = $input['money_state'];
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -986,7 +987,7 @@ class VehicalController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'请填写上线价格']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $order = AppVehical::find()->where(['id'=>$id])->one();
         $this->check_group_auth($order->group_id,$user);
@@ -1032,11 +1033,12 @@ class VehicalController extends CommonController
         $input = Yii::$app->request->post();
         $id = $input['id'];
         $token = $input['token'];
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $order = AppVehical::find()->where(['id'=>$id])->one();
         $this->check_group_auth($order->group_id,$user);
@@ -1049,11 +1051,12 @@ class VehicalController extends CommonController
         $input = Yii::$app->request->post();
         $id = $input['id'];
         $token = $input['token'];
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $order = AppVehical::find()->where(['id'=>$id])->one();
         $this->check_group_auth($order->group_id,$user);
@@ -1070,12 +1073,12 @@ class VehicalController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
-
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $order = AppVehical::findOne($id);
         $money_state = $order->money_state;
@@ -1226,12 +1229,12 @@ class VehicalController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
-
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $order = AppVehical::findOne($id);
         $money_state = $order->money_state;
@@ -1311,7 +1314,7 @@ class VehicalController extends CommonController
         $begintime = $input['begintime'] ?? '';
         $endtime = $input['endtime'] ?? '';
         $customer = $input['customer'] ?? '';
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -1324,7 +1327,7 @@ class VehicalController extends CommonController
             return json_encode($data);
         }
 
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppVehical::find()
             ->alias('v')
             ->select(['v.*','c.all_name','t.carparame'])
@@ -1440,8 +1443,9 @@ class VehicalController extends CommonController
         $token = $input['token'];
         $id = $input['id'];
         $type = $input['type'];//1 自有 2 承运商 3临时
+        $chitu = $input['chitu'];
         $arr = json_decode($input['arr'],true);
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppVehical::findOne($id);
         $group_id = $order->group_id;
@@ -1581,7 +1585,8 @@ class VehicalController extends CommonController
         $id = $input['id'];
         $type = $input['type'];
         $arr = json_decode($input['arr'],true);
-        $check_result = $this->check_token($token,true);
+        $chitu = $input['chitu'];
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppVehical::findOne($id);
         $group_id = $order->deal_company;
@@ -1714,7 +1719,8 @@ class VehicalController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
-        $check_result = $this->check_token($token,true);
+        $chitu = $input['chitu'];
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppVehical::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -1741,13 +1747,14 @@ class VehicalController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
         $transaction = AppVehical::getDb()->beginTransaction();
         try {
-            $check_result = $this->check_token($token,true);
+            $check_result = $this->check_token($token,true,$chitu);
             $user = $check_result['user'];
             $order = AppVehical::findOne($id);
             $this->check_group_auth($order->group_id,$user);
@@ -1801,7 +1808,8 @@ class VehicalController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
-        $check_result = $this->check_token($token,true);
+        $chitu = $input['chitu'];
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppVehical::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -1976,7 +1984,7 @@ class VehicalController extends CommonController
         $limit = $input['limit'] ?? 10;
         $ordernumber = $input['ordernumber'] ?? '';
         $begintime = $input['begintime'] ?? '';
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -1989,7 +1997,7 @@ class VehicalController extends CommonController
             return json_encode($data);
         }
 
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppVehical::find()
             ->alias('v')
             ->select(['v.*','c.all_name','t.carparame'])
@@ -2058,7 +2066,7 @@ class VehicalController extends CommonController
         $limit = $input['limit'] ?? 10;
         $ordernumber = $input['ordernumber'] ?? '';
         $begintime = $input['begintime'] ?? '';
-
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -2071,7 +2079,7 @@ class VehicalController extends CommonController
             return json_encode($data);
         }
 
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppVehical::find()
             ->alias('v')
             ->select(['v.*','t.carparame'])
@@ -2244,11 +2252,12 @@ class VehicalController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
 
         $order = AppVehical::findOne($id);
@@ -2277,11 +2286,12 @@ class VehicalController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppVehical::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -2350,12 +2360,13 @@ class VehicalController extends CommonController
          $token  = $input['token'];
          $id = $input['id'];
          $file = $_FILES['file'];
+         $chitu = $input['chitu'];
 //         $file = $input['tyd'];
          if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
          }
-         $check_result = $this->check_token($token,true);
+         $check_result = $this->check_token($token,true,$chitu);
          $user = $check_result['user'];
          $order = AppVehical::findOne($id);
          $this->check_group_auth($order->deal_company,$user);
@@ -2379,11 +2390,12 @@ class VehicalController extends CommonController
         $token  = $input['token'];
         $id = $input['id'];
         $file = $input['tyd'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppOrder::findOne($id);
         $this->check_group_auth($order->deal_company,$user);
@@ -2412,11 +2424,12 @@ class VehicalController extends CommonController
         $token  = $input['token'];
         $id = $input['id'];
         $file = $input['tyd'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppOrder::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -2445,6 +2458,7 @@ class VehicalController extends CommonController
         $token = $input['token'];
         $id = $input['id'];
         $content = $input['content'];
+        $chitu = $input['chitu'];
         // $type = $input['type'];
         if (empty($token) && !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
@@ -2454,7 +2468,7 @@ class VehicalController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'请填写异常信息']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppVehical::findOne($id);
         $this->check_group_auth($order->group_id,$user);
@@ -2560,11 +2574,12 @@ class VehicalController extends CommonController
         $token = $input['token'];
         $group_id = $input['group_id'];
         $type = $input['type'];
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $this->check_group_auth($group_id,$user);
         $group = AppGroup::find()->where(['id'=>$group_id])->one();
@@ -2706,11 +2721,12 @@ class VehicalController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $order = AppVehical::findOne($id);
         $this->check_group_auth($order->group_id,$user);

@@ -59,8 +59,10 @@ echo \Yii::$app->view->renderFile('@app/views/admin/base.php');
         <script type="text/html" id="table_type">
             {{# if(d.type == 2) { }}
                 <span style="color:green;">货主</span>
-            {{# }else if(d.status == 3) { }}
+            {{# }else if(d.type == 3) { }}
                 <span style="color:skyblue;">系统</span>
+            {{# }else if(d.type == 4) { }}
+                <span style="color:skyblue;">市配</span>
             {{# } }}
         </script>
 

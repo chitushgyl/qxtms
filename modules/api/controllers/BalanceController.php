@@ -36,8 +36,8 @@ class BalanceController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        // $check_result = $this->check_token_list($token);//验证令牌
-        // $user = $check_result['user'];
+         $check_result = $this->check_token($token);//验证令牌
+         $user = $check_result['user'];
 
         $list = AppBalance::find()->where(['group_id'=>$group_id]);
 

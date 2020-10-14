@@ -26,6 +26,7 @@ class FinanceController extends CommonController
           $endtime = $input['endtime'] ?? '';
           $limit = $input['limit'] ?? 10;
           $page = $input['page'] ?? 1;
+          $chitu = $input['chitu'];
             $data = [
                 'code' => 200,
                 'msg'   => '',
@@ -37,7 +38,7 @@ class FinanceController extends CommonController
               $data['msg'] = '参数错误';
               return json_encode($data);
           }
-          $check_result = $this->check_token_list($token);//验证令牌
+          $check_result = $this->check_token_list($token,$chitu);//验证令牌
           $user = $check_result['user'];
     //        $groups = AppGroup::group_list_arr($user);
           $time = date('Y-m-d',strtotime("-7 day"));

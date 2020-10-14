@@ -34,6 +34,7 @@ class PayController extends CommonController
         return $this->render('index');
     }
 
+
     public function actionWechat()
     {
         return $this->render('wechat');

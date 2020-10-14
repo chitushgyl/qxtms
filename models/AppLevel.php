@@ -25,18 +25,18 @@ class AppLevel extends \yii\db\ActiveRecord
     /**
      * @inheritdoc
      */
-    public function behaviors()
-    {
-        return [
-            [
-                'class' => TimestampBehavior::className(),
-                'createdAtAttribute' => 'flase',
-                'updatedAtAttribute' => 'update_time',
-                //'value'   => new Expression('NOW()'),
-                'value'   => function(){return date('Y-m-d H:i:s',time());},
-            ],
-        ];
-    }
+    // public function behaviors()
+    // {
+    //     return [
+    //         [
+    //             'class' => TimestampBehavior::className(),
+    //             'createdAtAttribute' => 'flase',
+    //             'updatedAtAttribute' => 'update_time',
+    //             //'value'   => new Expression('NOW()'),
+    //             'value'   => function(){return date('Y-m-d H:i:s',time());},
+    //         ],
+    //     ];
+    // }
 
     /**
      * {@inheritdoc}

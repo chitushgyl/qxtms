@@ -30,6 +30,7 @@ class RoleController extends CommonController
         $limit = $input['limit'] ?? 10;
         $name = $input['name'] ?? '';
         $use_flag = $input['use_flag'] ?? '';
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -41,7 +42,7 @@ class RoleController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppRole::find()
             ->alias('r')
             ->select(['r.role_id','r.name','r.update_time','r.use_flag','g.group_name'])
@@ -102,25 +103,28 @@ class RoleController extends CommonController
         $input = Yii::$app->request->post();
         $id = $input['id'];
         $token = $input['token'];
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token);
+        $check_result = $this->check_token($token,false,$chitu);
         $user = $check_result['user'];
 
-        $model = AppRole::find()->select(['role_id','name','role_auth','top_auth','group_id'])->where(['role_id'=>$id])->asArray()->one();
 
         $authority_id = $user->authority_id;
-        $auth_ids = $model['role_auth'];
-        $arr_ids = explode(',',$auth_ids);
+        $model = AppRole::find()->select(['role_id','name','role_auth','top_auth','group_id'])->where(['role_id'=>$id])->asArray()->one();
+
         $auth_ids_top = $model['top_auth'];
         $arr_ids_top = explode(',',$auth_ids_top);
 
         if ($user->admin_id == 1 && $user->com_type == 1) {
-            $permission = AppAuthLeft::getList();
+            $permission = AppAuthLeft::getList_chitu($chitu);
             $permission_top = AppAuthTop::getList();
         } else {
+            $model_a = AppRole::find()->select(['role_id','name','role_auth','top_auth','group_id'])->where(['role_id'=>$user->authority_id])->asArray()->one();
+            $auth_ids = $model_a['role_auth'];
+            $arr_ids = explode(',',$auth_ids);
             $permission = AppAuthLeft::find()->where(['in','id',$arr_ids])->andWhere(['use_flag'=>'Y'])->andWhere(['!=','route','/group_account/index'])->asArray()->all();
             $permission_top = AppAuthTop::find()->where(['in','id',$arr_ids])->andWhere(['use_flag'=>'Y'])->asArray()->all();
         }
@@ -152,11 +156,12 @@ class RoleController extends CommonController
         // $top_auth = $input['top_auth'];
         // $group = $input['group'];
         $token = $input['token'];
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $role_auth = implode(',',$auth);
         // $role_auth_top = implode(',',$top_auth);
@@ -241,6 +246,7 @@ class RoleController extends CommonController
         $token = $input['token'];
         $name = $input['name'];
         $group_id = $input['group_id'];
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -253,7 +259,7 @@ class RoleController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'请选择所属公司！']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
 
         $flag = AppRole::find()->where(['name'=>$name,'group_id'=>$group_id])->andWhere(['!=','role_id',$id])->one();
@@ -284,6 +290,7 @@ class RoleController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -293,7 +300,7 @@ class RoleController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'该角色正在使用，无法删除']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppRole::find()->where(['role_id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -313,12 +320,12 @@ class RoleController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
-
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
 
         $model = AppRole::find()->where(['role_id'=>$id])->one();

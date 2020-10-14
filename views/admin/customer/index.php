@@ -26,12 +26,11 @@ echo \Yii::$app->view->renderFile('@app/views/admin/base.php');
 
 <script type="text/html" id="options">
     <div class="layui-btn-group">
-        <?php if(can('admin.customer.edit')){?>
-            <a class="layui-btn layui-btn-sm" lay-event="edit">编辑</a>
-        <?php } ?>
-
         <?php if(can('admin.customer.del')){?>
             <a class="layui-btn layui-btn-danger layui-btn-sm " lay-event="del">删除</a>
+        <?php } ?>
+        <?php if(can('admin.customer.view')){?>
+            <a class="layui-btn layui-btn-sm" lay-event="view">详情</a>
         <?php } ?>
     </div>
 </script>
@@ -53,12 +52,11 @@ echo \Yii::$app->view->renderFile('@app/views/admin/base.php');
             // }
             ,page: true //开启分页
             ,cols: [[ //表头
-                {field: 'admin_id', title: 'ID',width:80, align:'center',hide:true}
-                ,{field: 'contact_name', title: '联系人', align:'center',width:150}
-                ,{field: 'ellipsis_name', title: '公司简称', align:'center',width:150}
-                ,{field: 'all_name', title: '公司全称', align:'center',width:250}
-                ,{field: 'address', title: '公司地址', align:'center',width:350}
-                ,{field: 'contact_phone', title: '联系方式', align:'center',width:200}
+                {field: 'id', title: 'ID',width:80, align:'center',hide:true}
+                ,{field: 'all_name', title: '公司简称', align:'center',width:150}
+                ,{field: 'group_name', title: '公司名称', align:'center',width:250}
+                ,{field: 'contact_name', title: '联系人', align:'center',width:350}
+                ,{field: 'contact_tel', title: '联系方式', align:'center',width:200}
                 ,{fixed: 'right', align:'center', toolbar: '#options',title: '操作'}
             ]]
         });
@@ -88,8 +86,8 @@ echo \Yii::$app->view->renderFile('@app/views/admin/base.php');
                         }
                     });
                 });
-            } else if(layEvent === 'edit'){
-                location.href = '/admin/customer/edit?id='+data.id;
+            } else if(layEvent === 'view'){
+                location.href = '/admin/customer/view?id='+data.id;
             }
         });
 
