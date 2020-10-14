@@ -26,6 +26,7 @@ class GoodsController extends CommonController
         $limit = $input['limit'] ?? 10;
         $use_flag = $input['use_flag'] ?? '';
         $city = $input['city'] ?? '';
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -37,7 +38,7 @@ class GoodsController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppGoods::find()
             ->alias('r')
             ->select(['r.*','g.group_name'])
@@ -237,6 +238,7 @@ class GoodsController extends CommonController
         $contact_name = $input['contact_name'];
         $contact_tel = $input['contact_tel'];
         $remark = $input['remark'];
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -261,7 +263,7 @@ class GoodsController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'联系电话不能为空']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppGoods::findOne($id);
         $this->check_group_auth($model->group_id,$user);
@@ -297,11 +299,12 @@ class GoodsController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppGoods::find()->where(['id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -323,11 +326,12 @@ class GoodsController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppGoods::find()->where(['id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -350,11 +354,12 @@ class GoodsController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppGoods::find()->where(['id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);

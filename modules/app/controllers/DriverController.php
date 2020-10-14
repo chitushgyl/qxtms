@@ -3,6 +3,7 @@ namespace app\modules\app\controllers;
 
 use app\models\AppBalance;
 use app\models\AppBulk;
+use app\models\AppCarriageAccount;
 use app\models\AppCommonAddress;
 use app\models\AppCommonContacts;
 use app\models\AppGroup;
@@ -14,6 +15,7 @@ use app\models\AppPayment;
 use app\models\AppPaymessage;
 use app\models\AppReceive;
 use app\models\AppSetParam;
+use app\models\Carriage;
 use Yii;
 use app\models\AppCartype;
 
@@ -27,20 +29,56 @@ class DriverController extends CommonController{
           $input = $request->post();
           $page = $input['page'] ?? 1;
           $limit = $input['limit'] ?? 10;
+          $state = $input['state'];
+          $startcity = $input['startcity'] ?? '';
+          $endcity = $input['endcity'] ?? '';
+          $ordernumber = $input['ordernumber'] ?? '';
+          $temperture = $input['temperture'] ?? '';
+          $cartype = $input['cartype'] ?? '';
+          $sort = [new \yii\db\Expression('FIELD (v.order_status, 1,2,3,4,5,6,7,8)')];
+          if ($state == 1){
+              $sort['v.create_time'] = SORT_DESC;
+          }else{
+              $sort['v.time_start'] = SORT_ASC;
+          }
           $list = AppOrder::find()
               ->alias('v')
               ->select(['v.*','t.carparame'])
               ->leftJoin('app_cartype t','v.cartype=t.car_id')
               ->where(['v.line_status'=>2,'v.delete_flag'=>'Y'])
-              ->andwhere(['in','v.order_type',[1,3,5,8]]);
+              ->andwhere(['in','v.order_type',[1,3,5,8,13]]);
+          if ($startcity && $endcity){
+                $list->andWhere(['v.startcity'=>$startcity,'v.endcity'=>$endcity]);
+          }else{
+              if ($startcity){
+                  $list->andWhere(['v.startcity'=>$startcity]);
+              }
+              if ($endcity){
+                  $list->andWhere(['v.endcity'=>$endcity]);
+              }
+          }
+          if ($ordernumber){
+              $list->andWhere(['v.ordernumber'=>$ordernumber]);
+          }
+          if ($temperture){
+              $list->andWhere(['in','v.temperture',json_decode($temperture,true)]);
+          }
+          if ($cartype){
+              $list->andWhere(['in','v.cartype',json_decode($cartype,true)]);
+          }
           $list = $list->offset(($page - 1) * $limit)
               ->limit($limit)
-              ->orderBy([new \yii\db\Expression('FIELD (order_status, 1,2,3,4,5,6,7,8)'),'v.time_start'=>SORT_DESC])
+              ->orderBy($sort)
               ->asArray()
               ->all();
           foreach($list as $key =>$value){
               $list[$key]['startstr'] = json_decode($value['startstr'],true);
-              $list[$key]['endstr'] = json_decode($value['endstr'],true);
+              $list[$key]['endstr'] = json_decode($value['endstr'],true);              
+              $list[$key]['line_start_contant'] = json_decode($value['line_start_contant'],true);
+              $list[$key]['line_end_contant'] = json_decode($value['line_end_contant'],true);
+              $list[$key]['time_start'] = $this->format_time($value['time_start']);
+              $list[$key]['time_end'] = $this->format_time($value['time_end']);
+
           }
           $data = $this->encrypt(['code'=>200,'msg'=>'查询成功','data'=>$list]);
           return $this->resultInfo($data);
@@ -54,20 +92,51 @@ class DriverController extends CommonController{
         $input = $request->post();
         $page = $input['page'] ?? 1;
         $limit = $input['limit'] ?? 10;
+        $state = $input['state'];
+        $startcity = $input['startcity'] ?? '';
+        $endcity = $input['endcity'] ?? '';
+        $ordernumber = $input['ordernumber'] ?? '';
+        $temperture = $input['temperture'] ?? '';
+        if ($state == 1){
+            $sort = 'v.time_start';
+        }else{
+            $sort = 'v.create_time';
+        }
         $list = AppOrder::find()
             ->alias('v')
             ->select(['v.*','t.carparame'])
             ->leftJoin('app_cartype t','v.cartype=t.car_id')
             ->where(['v.line_status'=>2,'v.order_status'=>1,'v.delete_flag'=>'Y'])
             ->andwhere(['in','v.order_type',[2,4,6,9]]);
+        if ($startcity && $endcity){
+            $list->andWhere(['v.startcity'=>$startcity,'v.endcity'=>$endcity]);
+        }else{
+            if ($startcity){
+                $list->andWhere(['v.startcity'=>$startcity]);
+            }
+            if ($endcity){
+                $list->andWhere(['v.endcity'=>$endcity]);
+            }
+        }
+        if ($ordernumber){
+            $list->andWhere(['v.ordernumber'=>$ordernumber]);
+        }
+        if ($temperture){
+            $list->andWhere(['in','v.temperture',json_decode($temperture,true)]);
+        }
         $list = $list->offset(($page - 1) * $limit)
             ->limit($limit)
-            ->orderBy([new \yii\db\Expression('FIELD (order_status, 1,2,3,4,5,6,7,8)'),'v.time_start'=>SORT_DESC])
+            ->orderBy([new \yii\db\Expression('FIELD (order_status, 1,2,3,4,5,6,7,8)'),$sort =>SORT_DESC])
             ->asArray()
             ->all();
         foreach($list as $key =>$value){
             $list[$key]['startstr'] = json_decode($value['startstr'],true);
             $list[$key]['endstr'] = json_decode($value['endstr'],true);
+
+            $list[$key]['line_start_contant'] = json_decode($value['line_start_contant'],true);
+            $list[$key]['line_end_contant'] = json_decode($value['line_end_contant'],true);
+            $list[$key]['time_start'] = $this->format_time($value['time_start']);
+
         }
         $data = $this->encrypt(['code'=>200,'msg'=>'查询成功','data'=>$list]);
         return $this->resultInfo($data);
@@ -112,7 +181,7 @@ class DriverController extends CommonController{
     }
 
     /*
-     * order 订单详情
+     * order 订单详情 (个人中心)
      * */
     public function actionVehical_view(){
         $input = Yii::$app->request->post();
@@ -127,8 +196,32 @@ class DriverController extends CommonController{
 
         $model = AppOrder::find()
             ->alias('a')
-            ->select('a.*,b.carparame')
+            ->select('a.*,b.carparame,c.pick_id,c.deal_company,d.name as carriage_name')
             ->leftJoin('app_cartype b','a.cartype = b.car_id')
+            ->leftJoin('app_order_carriage c','a.id = c.pick_id')
+            ->leftJoin('app_carriage d','c.deal_company=d.cid')
+            ->where(['a.id'=>$id])
+            ->asArray()
+            ->one();
+        $data = $this->encrypt(['code'=>200,'msg'=>'','data'=>$model]);
+        return $this->resultInfo($data);
+    }
+    /*
+     * order 订单详情 (接单)
+     * */
+    public function actionVehicle_view(){
+        $input = Yii::$app->request->post();
+        $id = $input['id'];
+        if (empty($id)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        $model = AppOrder::find()
+            ->alias('a')
+            ->select('a.*,b.carparame,c.pick_id,c.deal_company,d.name as carriage_name')
+            ->leftJoin('app_cartype b','a.cartype = b.car_id')
+            ->leftJoin('app_order_carriage c','a.id = c.pick_id')
+            ->leftJoin('app_carriage d','c.deal_company=d.cid')
             ->where(['a.id'=>$id])
             ->asArray()
             ->one();
@@ -181,9 +274,13 @@ class DriverController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $user = $check_result['user'];
         $order = AppOrder::find()->where(['id'=>$id])->one();
+        if($user->group_id == $order->group_id){
+            $data = $this->encrypt(['code'=>400,'msg'=>'不能承接自己发布的订单']);
+            return $this->resultInfo($data);
+        }
         if ($order->order_status != 1){
             $data = $this->encrypt(['code'=>400,'msg'=>'订单已被承接']);
             return $this->resultInfo($data);
@@ -304,7 +401,7 @@ class DriverController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token);//验证令牌
+        $check_result = $this->check_token($token,true);//验证令牌
         $user = $check_result['user'];
         $group_id = $user->group_id;
         $list = AppOrder::find()
@@ -312,7 +409,9 @@ class DriverController extends CommonController{
             ->select(['v.*', 't.carparame','a.group_name'])
             ->leftJoin('app_cartype t', 'v.cartype=t.car_id')
             ->leftJoin('app_group a','a.id= v.group_id')
-            ->where(['v.deal_company' => $group_id, 'v.delete_flag' => 'Y']);
+            ->where(['v.deal_company' => $group_id, 'v.delete_flag' => 'Y'])
+            ->andWhere(['not in','v.order_type',[11,12]]);
+//            ->andWhere(['!=','order_status',12]);;
 
         $list = $list->offset(($page - 1) * $limit)
             ->limit($limit)
@@ -345,7 +444,7 @@ class DriverController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $user= $check_result['user'];
         $order = AppOrder::findOne($id);
         if($order->copy == 1){
@@ -544,7 +643,7 @@ class DriverController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $user = $check_result['user'];
         $order = AppOrder::findOne($id);
 //        $this->check_group_auth($order->deal_company,$user);
@@ -605,7 +704,7 @@ class DriverController extends CommonController{
               $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
               return $this->resultInfo($data);
           }
-          $check_result = $this->check_token($token);
+          $check_result = $this->check_token($token,true);
           $user = $check_result['user'];
           $order = AppOrder::findOne($id);
           if(!in_array($order->order_status,[3,4])){
@@ -647,7 +746,7 @@ class DriverController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $user = $check_result['user'];
         $model = AppOrder::findOne($id);
         $path = $this->Upload('receipt',$file);
@@ -681,7 +780,7 @@ class DriverController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token);
+        $check_result = $this->check_token($token,true);
         $user = $check_result['user'];
         $group_id = $user->group_id;
         $list = AppBulk::find()
@@ -773,7 +872,7 @@ class DriverController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token);
+        $check_result = $this->check_token($token,true);
         $user = $check_result['user'];
         $bulk = AppBulk::findOne($id);
         if($bulk->orderstate != 2){
@@ -1026,7 +1125,7 @@ class DriverController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token);
+        $check_result = $this->check_token($token,true);
         $user = $check_result['user'];
         $order = AppBulk::findOne($id);
         if($order->orderstate !=3){
@@ -1068,7 +1167,7 @@ class DriverController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $user = $check_result['user'];
         $model = AppBulk::findOne($id);
         $path = $this->Upload('receipt',$file);
@@ -1087,6 +1186,526 @@ class DriverController extends CommonController{
             return $this->resultInfo($data);
         }else{
             $data = $this->encrypt(['code'=>400,'msg'=>'上传失败']);
+            return $this->resultInfo($data);
+        }
+    }
+
+    /*
+     * 整车内部订单列表
+     * */
+    public function actionVehical_list(){
+        $request = Yii::$app->request;
+        $input = $request->post();
+        $token = $input['token'];
+        $group_id = $input['group_id'];
+        $page = $input['page'] ?? 1;
+        $limit = $input['limit'] ?? 10;
+
+        if (empty($token)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        $check_result = $this->check_token($token);//验证令牌
+
+        $list = AppOrder::find()
+            ->where(['delete_flag'=>'Y','line_id'=>null,'order_stage'=>3,'line_status'=>1,'group_id'=>$group_id])
+            ->andWhere(['not in','order_status',[11,12]]);
+//            ->andWhere(['!=','order_status',12]);
+        $list = $list->offset(($page - 1) * $limit)
+            ->limit($limit)
+            ->orderBy(['update_time'=>SORT_DESC])
+            ->asArray()
+            ->all();
+        foreach ($list as $key =>$value){
+            $list[$key]['startstr'] = json_decode($value['startstr'],true);
+            $list[$key]['endstr'] = json_decode($value['endstr'],true);
+            $list[$key]['ids'] = json_decode($value['ids'],true);
+        }
+
+        $data = $this->encrypt(['code'=>200,'msg'=>'查询成功','data'=>$list]);
+        return $this->resultInfo($data);
+    }
+
+    /*
+     *承运商列表
+     * */
+    public function actionCarriage(){
+        $request = Yii::$app->request;
+        $input = $request->post();
+        $token = $input['token'];
+        $page = $input['page'] ?? 1;
+        $limit = $input['limit'] ?? 10;
+        if (empty($token)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        $check_result = $this->check_token($token,true);//验证令牌
+        $user = $check_result['user'];
+        $list = Carriage::find()
+            ->alias('c')
+            ->select(['c.*','b.username'])
+            ->leftJoin('app_carriage_account b','c.cid = b.carriage_id')
+            ->where(['c.group_id'=>$user->group_id,'c.delete_flag'=>'Y']);
+        $count = $list->count();
+        $list = $list->offset(($page - 1) * $limit)
+            ->limit($limit)
+            ->orderBy(['c.update_time'=>SORT_DESC])
+            ->asArray()
+            ->all();
+        $data = $this->encrypt(['code'=>200,'msg'=>'查询成功','data'=>$list]);
+        return $this->resultInfo($data);
+    }
+
+    /*
+     * 添加承运商
+     * */
+    public function actionCarriage_add(){
+        $input = Yii::$app->request->post();
+        $token = $input['token'];
+        $name = $input['name'];
+        $username = $input['username'];
+        $password = $input['password'];
+        $group_id = $input['group_id'];
+        if (empty($token)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        if (empty($name)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'承运方名称不能为空！']);
+            return $this->resultInfo($data);
+        }
+        $flag = Carriage::find()->where(['name'=>$name,'group_id'=>$group_id,'delete_flag'=>'Y'])->one();
+        if ($flag){
+            $data = $this->encrypt(['code'=>400,'msg'=>'承运方名称已存在！']);
+            return $this->resultInfo($data);
+        }
+        if(empty($group_id)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'请选择所属公司！']);
+            return $this->resultInfo($data);
+        }
+        if ($username){
+            $carriage = AppCarriageAccount::find()->where(['username'=>$username])->one();
+            if ($carriage){
+                $data = $this->encrypt(['code'=>400,'msg'=>'承运方账号已存在！']);
+                return $this->resultInfo($data);
+            }
+            if (empty($password)){
+                $data = $this->encrypt(['code'=>400,'msg'=>'账户密码不能为空']);
+                return $this->resultInfo($data);
+            }
+        }
+        $check_result = $this->check_token($token);//验证令牌
+        $user = $check_result['user'];
+        $model = new Carriage();
+        $model->name = $name;
+        // $model->address = $input['address'];
+        // $model->provinceid = $input['provinceid'];
+        // $model->cityid = $input['cityid'];
+        // $model->areaid = $input['areaid'];
+        $model->group_id = $group_id;
+        $transaction = Yii::$app->db->beginTransaction();
+        try {
+            $res = $model->save();
+            if ($res){
+                if ($username && $password){
+                    $new = new AppCarriageAccount();
+                    $new->username = $username;
+                    $new->password = md5($password);
+                    $new->group_id = $group_id;
+                    $new->carriage_id = $model->cid;
+                    $res_c = $new->save();
+                }
+                $transaction->commit();
+                $this->hanldlog($user->id,$user->name.'添加承运方:'.$model->name);
+                $data = $this->encrypt(['code'=>200,'msg'=>'添加成功']);
+                return $this->resultInfo($data);
+            }else{
+                $data = $this->encrypt(['code'=>400,'msg'=>'添加失败']);
+                return $this->resultInfo($data);
+            }
+        }catch (\Exception $e){
+            $transaction->rollBack();
+            $data = $this->encrypt(['code'=>400,'msg'=>'添加失败2']);
+            return $this->resultInfo($data);
+        }
+    }
+
+    /*
+     * 修改承运商
+     * */
+    public function actionCarriage_edit(){
+        $input = Yii::$app->request->post();
+        $token = $input['token'];
+        $id = $input['id'];
+        $name = $input['name'];
+        $group_id = $input['group_id'];
+        $username = $input['username'];
+        $password = $input['password'];
+        if (empty($token) || empty($id)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        if (empty($name)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'承运方名称不能为空！']);
+            return $this->resultInfo($data);
+        }
+        $flag = Carriage::find()->where(['name'=>$name,'group_id'=>$group_id,'delete_flag'=>'Y'])->andWhere(['!=','cid',$id])->one();
+        if ($flag){
+            $data = $this->encrypt(['code'=>400,'msg'=>'承运方名称已存在！']);
+            return $this->resultInfo($data);
+        }
+        if ($username){
+            $customer = AppCarriageAccount::find()->where(['username'=>$username])->asArray()->all();
+            if (count($customer)>1){
+                $data = $this->encrypt(['code'=>400,'msg'=>'承运方账号已存在！']);
+                return $this->resultInfo($data);
+            }
+        }
+        $check_result = $this->check_token($token);//验证令牌
+        $user = $check_result['user'];
+        $model = Carriage::find()->where(['cid'=>$id])->one();
+        $model->name = $name;
+//        $model->address = $input['address'];
+//        $model->provinceid = $input['provinceid'];
+//        $model->cityid = $input['cityid'];
+//        $model->areaid = $input['areaid'];
+        $model->group_id = $group_id;
+        $res_c = true;
+        $new = AppCarriageAccount::find()->where(['carriage_id'=>$id,'group_id'=>$model->group_id])->one();
+        if ($new){
+            $new->username = $input['username'];
+            if($password){
+                $new->password = md5($password);
+            }
+            $res_c = $new->save();
+        }else{
+            if ($username){
+                if (!$password){
+                    $data = $this->encrypt(['code'=>400,'msg'=>'密码不能为空！']);
+                    return $this->resultInfo($data);
+                }
+            }
+            if ($username && $password){
+                $account = new AppCarriageAccount();
+                $account->username = $username;
+                $account->password = md5($password);
+                $account->group_id = $model->group_id;
+                $account->carriage_id = $id;
+                $res_c = $account->save();
+            }
+        }
+        $res = $model->save();
+        if ($res && $res_c){
+            $this->hanldlog($user->id,$user->name.'修改承运方：'.$model->name);
+            $data = $this->encrypt(['code'=>200,'msg'=>'修改成功']);
+            return $this->resultInfo($data);
+        }else{
+            $data = $this->encrypt(['code'=>400,'msg'=>'修改失败']);
+            return $this->resultInfo($data);
+        }
+    }
+
+    /*
+     * 承运商详情
+     * */
+    public function actionCarriage_view(){
+        $input = Yii::$app->request->post();
+        $token = $input['token'];
+        $id = $input['id'];
+        if (empty($token)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        $check_result = $this->check_token($token);//验证令牌
+        $user = $check_result['user'];
+        if ($id) {
+            $model = Carriage::find()
+                ->alias('c')
+                ->select(['c.*','b.username'])
+                ->leftJoin('app_carriage_account b','c.cid = b.carriage_id')
+                ->where(['c.cid'=>$id])
+                ->asArray()
+                ->one();
+        } else {
+            $model =[];
+        }
+
+        $data = $this->encrypt(['code'=>200,'msg'=>'查询成功','data'=>$model]);
+        return $this->resultInfo($data);
+    }
+
+    /*
+     * 指派车辆接单
+     * */
+    public function actionTake_order(){
+          $input = Yii::$app->request->post();
+          $id = $input['id'];
+          $token = $input['token'];
+          if (empty($id) ||empty($token)){
+              $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+              return $this->resultInfo($data);
+          }
+          $check_result = $this->check_token($token,false);
+          $user = $check_result['user'];
+          $order = AppOrder::findOne($id);
+          $order->order_status = 3;
+          $receive = new AppReceive();
+          $receive->receivprice = $order->line_price;
+          $receive->trueprice = $order->line_price;
+          $receive->al_price = $order->line_price;
+          $receive->order_id = $order->id;
+          $receive->create_user_id = $user->id;
+          $receive->create_user_name = $user->name;
+          $receive->group_id = $user->group_id;
+          $receive->ordernumber = $order->ordernumber;
+          if ($order->money_state == 'N' || !$order->money_state){
+             $receive->company_type = 3;
+             $receive->compay_id = $order->group_id;
+             $receive->trueprice = 0;
+             $payment = AppPayment::find()->where(['group_id'=>$order->group_id,'order_id'=>$id])->one();
+             $payment->carriage_id = $user->group_id;
+             $payment->pay_type = 5;
+             $res_p = $payment->save();
+          }else if($order->pay_status == 2){
+             $receive->company_type = 2;
+             $receive->compay_id = 25;
+             $receive->trueprice = 0;
+          }
+
+          foreach(json_decode($order->driverinfo,true) as $key => $value){
+              $order_carriage['pick_id'] = $order->id;
+              $order_carriage['group_id'] = $user->group_id;
+              $order_carriage['create_user_id'] = $user->id;
+              $order_carriage['carriage_price'] = $value['price'];
+              $order_carriage['type'] = 1;
+              $order_carriage['contant'] = $value['contant'];
+              $order_carriage['carnumber'] = $value['carnumber'];
+              $order_carriage['tel'] = $value['tel'];
+              $order_carriage['startstr'] = $order->startstr;
+              $order_carriage['endstr'] = $order->endstr;
+              $order_carriage['create_time'] = $order_carriage['update_time'] = date('Y-m-d H:i:s', time());
+              $pick_lists[] = $order_carriage;
+          }
+          $transaction= AppOrder::getDb()->beginTransaction();
+          try {
+              $res = $order->save();
+              $arr = $receive->save();
+              $res_p = Yii::$app->db->createCommand()->batchInsert(AppOrderCarriage::tableName(), ['pick_id', 'group_id', 'create_user_id', 'carriage_price', 'type', 'contant', 'carnumber', 'tel','startstr','endstr', 'create_time', 'update_time'], $pick_lists)->execute();
+              if ($res && $arr && $res_p){
+                  $transaction->commit();
+                  $this->hanldlog($user->id,'APP接取订单'.$order->ordernumber);
+                  $data = $this->encrypt(['code'=>200,'msg'=>'接单成功']);
+                  return $this->resultInfo($data);
+              }else{
+                  $transaction->rollBack();
+                  $data = $this->encrypt(['code'=>400,'msg'=>'接单失败']);
+                  return $this->resultInfo($data);
+             }
+          }catch (\Exception $e){
+              $transaction->rollBack();
+              $data = $this->encrypt(['code'=>400,'msg'=>'接单失败']);
+              return $this->resultInfo($data);
+          }
+
+
+    }
+
+    /*
+     * 取消接单
+     * */
+    public function actionCancel_car_order(){
+        $input = Yii::$app->request->post();
+        $id = $input['id'];
+        $token = $input['token'];
+        $reason = $input['reason'];
+        if (empty($id) || empty($token)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        $check_result = $this->check_token($token,true);
+        $user = $check_result['user'];
+        $order = AppOrder::findOne($id);
+        if($order->pay_status == 2 && $order->money_state=='Y') {
+//            修改订单状态，退款至余额，添加应付（赤途），添加余额记录balance/paymessage
+            $order->order_status = 8;
+            $order->reason = $reason;
+            $tradenumber = $order->ordernumber;
+            $group = AppGroup::find()->where(['id' => $order->group_id])->one();
+            $paymessage = AppPaymessage::find()->where(['orderid' => $tradenumber, 'state' => 1, 'pay_result' => 'SUCCESS'])->one();
+            $price = $paymessage->paynum;
+            $balan_money = $paymessage->paynum + $group->balance;
+            $group->balance = $balan_money;
+            $balance = new AppBalance();
+            $pay = new AppPaymessage();
+            $balance->orderid = $order->id;
+            $balance->pay_money = $price;
+            $balance->order_content = '整车取消订单退款';
+            $balance->action_type = 7;
+            $balance->userid = $user->id;
+            $balance->create_time = date('Y-m-d H:i:s', time());
+            $balance->ordertype = 1;
+            $balance->group_id = $order->group_id;
+            $pay->orderid = $order->tradenumber;
+            $pay->paynum = $price;
+            $pay->create_time = date('Y-m-d H:i:s', time());
+            $pay->userid = $user->id;
+            $pay->paytype = 3;
+            $pay->type = 1;
+            $pay->state = 3;
+            $order->pay_status = 1;
+
+            $pay_ment = AppPayment::find()->where(['order_id' => $order->id, 'group_id' => $order->group_id])->one();
+
+            $payment = new AppPayment();
+            $payment->group_id = 25;
+            $payment->order_id = $order->id;
+            $payment->pay_type = 5;
+            $payment->status = 3;
+            $payment->al_pay = $price;
+            $payment->truepay = $price;
+            $payment->create_user_id = $user->id;
+            $payment->carriage_name = $group->group_name;
+            $payment->carriage_id = $order->group_id;
+            $payment->pay_price = $price;
+            $payment->type = 1;
+            $transaction = AppPaymessage::getDb()->beginTransaction();
+            try {
+                $res = $pay->save();
+                $res_m = $group->save();
+                $res_b = $balance->save();
+                $res_o = $order->save();
+                $res_p = $payment->save();
+                if ($pay_ment) {
+                    $pay_ment->delete();
+                }
+                if ($res && $res_m && $res_b && $res_o && $res_p) {
+                    $transaction->commit();
+                    $data = $this->encrypt(['code' => 200, 'msg' => '取消成功']);
+                    return $this->resultInfo($data);
+                }
+            } catch (\Exception $e) {
+                $transaction->rollback();
+                $data = $this->encrypt(['code' => 400, 'msg' => '取消失败！']);
+                return $this->resultInfo($data);
+            }
+        }else {
+            $order->order_status = 8;
+            $order->reason = $reason;
+            $res_p = true;
+            $payment = AppPayment::find()->where(['order_id' => $id, 'group_id' => $order->group_id])->one();
+            $transaction = AppOrder::getDb()->beginTransaction();
+            try {
+                $res = $order->save();
+                if ($payment) {
+                    $res_p = $payment->delete();
+                }
+                if ($res && $res_p) {
+                    $transaction->commit();
+                    $data = $this->encrypt(['code' => 200, 'msg' => '取消成功！']);
+                    return $this->resultInfo($data);
+                } else {
+                    $transaction->rollBack();
+                    $data = $this->encrypt(['code' => 400, 'msg' => '取消失败！']);
+                    return $this->resultInfo($data);
+                }
+            } catch (\Exception $e) {
+                $transaction->rollBack();
+                $data = $this->encrypt(['code' => 400, 'msg' => '取消失败！']);
+                return $this->resultInfo($data);
+            }
+        }
+    }
+
+    /*
+     * 订单列表(我的指派车辆已接单)
+     * */
+    public function actionOrder_list(){
+        $request = Yii::$app->request;
+        $input = $request->post();
+        $token = $input['token'];
+        $page = $input['page'] ?? 1;
+        $limit = $input['limit'] ?? 10;
+
+        if (empty($token)) {
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        $check_result = $this->check_token($token,true);//验证令牌
+        $user = $check_result['user'];
+        $group_id = $user->group_id;
+        $list = AppOrder::find()
+            ->alias('v')
+            ->select(['v.*', 't.carparame','a.group_name'])
+            ->leftJoin('app_cartype t', 'v.cartype=t.car_id')
+            ->leftJoin('app_group a','a.id= v.group_id')
+            ->where(['v.deal_company' => $group_id, 'v.delete_flag' => 'Y'])
+            ->andWhere(['=','v.order_type',12]);
+
+        $list = $list->offset(($page - 1) * $limit)
+            ->limit($limit)
+            ->orderBy(['v.time_start' => SORT_DESC])
+            ->asArray()
+            ->all();
+        $data = $this->encrypt(['code'=>200,'msg'=>'查询成功','data'=>$list]);
+        return $this->resultInfo($data);
+    }
+
+    /*
+     * 上传回单
+     * */
+    public function actionOrder_upload(){
+        $input = Yii::$app->request->post();
+        $token = $input['token'];
+        $id = $input['id'];
+        $file = $_FILES['file'];
+        if (empty($token)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        $check_result = $this->check_token($token,true);
+        $user = $check_result['user'];
+        $model = AppOrder::findOne($id);
+        $path = $this->Upload('receipt',$file);
+        //查找是否有已经有回单上传
+        if (!empty($model->receipt)) {
+            $arr_list = json_decode($model->receipt,TRUE);
+            array_push($arr_list,$path);
+        }else{
+            $arr_list[] = $path;
+        }
+        $model->receipt = json_encode($arr_list);
+        $res = $model->save();
+        if ($res){
+            $data = $this->encrypt(['code'=>200,'msg'=>'上传成功']);
+            return $this->resultInfo($data);
+        }else{
+            $data = $this->encrypt(['code'=>400,'msg'=>'上传失败']);
+            return $this->resultInfo($data);
+        }
+    }
+
+    /*
+     * 确认送达
+     * */
+    public function actionOrder_confirm(){
+        $input = Yii::$app->request->post();
+        $token = $input['token'];
+        $id = $input['id'];
+        if (empty($id) || empty($token)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        $check_result = $this->check_token($token,true);
+        $user = $check_result['user'];
+
+        $order = AppOrder::findOne($id);
+        $order->order_status = 5;
+        $res = $order->save();
+        if ($res){
+            $data = $this->encrypt(['code'=>200,'msg'=>'操作成功！']);
+            return $this->resultInfo($data);
+        }else{
+            $data = $this->encrypt(['code'=>400,'msg'=>'操作失败！']);
             return $this->resultInfo($data);
         }
     }

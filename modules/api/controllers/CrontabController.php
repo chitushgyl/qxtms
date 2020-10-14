@@ -9,10 +9,12 @@ use app\models\AppLineLog;
 use app\models\AppLine;
 use app\models\AppPayment;
 use app\models\AppPaymessage;
+use app\models\AppPriceCount;
 use app\models\AppReceive;
 use app\models\AppRefund;
 use app\models\AppOrder;
 use app\models\AppVehical;
+use app\models\Car;
 use app\models\CountReceive;
 use Yii;
 
@@ -169,11 +171,11 @@ class CrontabController extends CommonController
         }
         foreach ($list as $key => $value){
             $bulk = AppBulk::find()
-                ->alias('a')
-                ->select('a.*,b.group_id groupid')
-                ->leftJoin('app_line b','a.shiftid = b.id')
-                ->where(['a.id'=>$value['id']])
-                ->one();
+                  ->alias('a')
+                  ->select('a.*,b.group_id groupid')
+                  ->leftJoin('app_line b','a.shiftid = b.id')
+                  ->where(['a.id'=>$value['id']])
+                  ->one();
             if (time() - strtotime($value['start_time'] >= 5*24*3600 )){
                 $bulk_order = AppBulk::findOne($value['id']);
                 $bulk_order->orderstate = 5;
@@ -249,21 +251,21 @@ class CrontabController extends CommonController
      * 线路自动发车
      * */
     public function actionLine_dispatch(){
-        $list = AppLine::find()->where(['delete_flag'=>'Y','state'=>1])->asArray()->all();
-        if (count($list)>=1){
-            foreach($list as $key => $value){
-                $bulk = AppBulk::find()->where(['shiftid'=>$value['id']])->one();
-                if(!empty($bulk)){
-                    $line = AppLine::findOne($value['id']);
-                    $time = strtotime($value['start_time']);
-                    if (time()>= $time){
-                        $line->state = 2;
-                        $res = $line->save();
-                        if ($res){
-                            $this->hanldlog($value['create_user_id'],'线路'.$value['startcity'].'->'.$value['endcity'].'已发车');
+          $list = AppLine::find()->where(['delete_flag'=>'Y','state'=>1])->asArray()->all();
+             if (count($list)>=1){
+                foreach($list as $key => $value){
+                    $bulk = AppBulk::find()->where(['shiftid'=>$value['id']])->one();
+                    if(!empty($bulk)){
+                        $line = AppLine::findOne($value['id']);
+                        $time = strtotime($value['start_time']);
+                        if (time()>= $time){
+                            $line->state = 2;
+                            $res = $line->save();
+                            if ($res){
+                                $this->hanldlog($value['create_user_id'],'线路'.$value['startcity'].'->'.$value['endcity'].'已发车');
+                            }
                         }
                     }
-                }
             }
         }
     }
@@ -285,54 +287,55 @@ class CrontabController extends CommonController
         foreach($list as $key => $value){
             $time_week = json_decode($value['time_week']);
             foreach ($time_week as $k => $v){
-                $time = $this->getTimeFromWeek($v);
-                $time1 = strtotime(date('Y-m-d'.' '.$value['time'],$time));
-                $time3 = date('mdHis',time());
-                $line = new AppLine();
-                $line->startcity = $value['startcity'];
-                $line->endcity = $value['endcity'];
-                $c1 = $this->getfirstchar($value['group_name']);
-                $c2 = $this->getfirstchar($value['group_name'],1,1);
-                $c3 = $this->getfirstchar($value['startcity']);
-                $c4 = $this->getfirstchar($value['endcity']);
-                $line->shiftnumber = $c1.$c2.$c3.$c4.$time3.$v;
-                $line->line_price = $value['line_price'];
-                $line->group_id = $value['group_id'];
-                $line->trunking = $value['trunking'];
-                $line->picktype = $value['picktype'];
-                $line->sendtype = $value['sendtype'];
-                $line->begin_store = $value['begin_store'];
-                $line->end_store = $value['end_store'];
-                $line->pickprice = $value['pickprice'];
-                $line->sendprice = $value['sendprice'];
-                $line->start_time = date('Y-m-d'.' '.$value['time'],$time);
-                $line->arrive_time = date('Y-m-d H:i:s',($time1 + $value['trunking']*24*3600));
-                $line->all_volume = $value['all_volume'];
-                $line->all_weight = $value['all_weight'];
-                $line->weight_price = $value['weight_price'];
-                $line->transfer = $value['centercity'];
-                $line->create_user_id = $value['create_user_id'];
-                $line->transfer_info = $value['center_store'];
-                $line->line_id = $value['id'];
-                $line->carriage_id = $value['carriage'];
-                $line->line_state  = 2;
-                $price = json_decode($value['weight_price'],true);
-                //获取最低单价
-                foreach($price as $kkk =>$vvv){
-                    $price_a[] = $vvv['price'];
-                }
-                $line->price = min($price_a);
-                $line->eprice = min($price_a)*1000/2.5;
+              $time = $this->getTimeFromWeek($v);
+              $time1 = strtotime(date('Y-m-d'.' '.$value['time'],$time));
+              $time3 = date('mdHis',time());
+              $line = new AppLine();
+              $line->startcity = $value['startcity'];
+              $line->endcity = $value['endcity'];
+              $c1 = $this->getfirstchar($value['group_name']);
+              $c2 = $this->getfirstchar($value['group_name'],1,1);
+              $c3 = $this->getfirstchar($value['startcity']);
+              $c4 = $this->getfirstchar($value['endcity']);
+              $line->shiftnumber = $c1.$c2.$c3.$c4.$time3.$v;
+              $line->line_price = $value['line_price'];
+              $line->group_id = $value['group_id'];
+              $line->trunking = $value['trunking'];
+              $line->picktype = $value['picktype'];
+              $line->sendtype = $value['sendtype'];
+              $line->begin_store = $value['begin_store'];
+              $line->end_store = $value['end_store'];
+              $line->pickprice = $value['pickprice'];
+              $line->temperture = $value['temperture'];
+              $line->sendprice = $value['sendprice'];
+              $line->start_time = date('Y-m-d'.' '.$value['time'],$time);
+              $line->arrive_time = date('Y-m-d H:i:s',($time1 + $value['trunking']*24*3600));
+              $line->all_volume = $value['all_volume'];
+              $line->all_weight = $value['all_weight'];
+              $line->weight_price = $value['weight_price'];
+              $line->transfer = $value['centercity'];
+              $line->create_user_id = $value['create_user_id'];
+              $line->transfer_info = $value['center_store'];
+              $line->line_id = $value['id'];
+              $line->carriage_id = $value['carriage'];
+              $line->line_state  = 2;
+              $price = json_decode($value['weight_price'],true);
+              //获取最低单价
+              foreach($price as $kkk =>$vvv){
+                  $price_a[] = $vvv['price'];
+              }
+              $line->price = min($price_a);
+              $line->eprice = min($price_a)*1000/2.5;
 
-                $res = $line->save();
-                if ($res){
-                    $line_e = AppLineLog::findOne($value['id']);
-                    $line_e->line_state = 2;
-                    $line_e->save();
-                    $this->hanldlog($value['create_user_id'],'定时生成线路'.$line->startcity.'->'.$line->endcity);
-                }else{
-                    continue;
-                }
+              $res = $line->save();
+              if ($res){
+                  $line_e = AppLineLog::findOne($value['id']);
+                  $line_e->line_state = 2;
+                  $line_e->save();
+                  $this->hanldlog($value['create_user_id'],'定时生成线路'.$line->startcity.'->'.$line->endcity);
+              }else{
+                  continue;
+              }
             }
         }
     }
@@ -382,7 +385,7 @@ class CrontabController extends CommonController
                     $line->state = 5;
                     $res = $line->save();
                     if ($res){
-                        $this->hanldlog($value['create_user_id'],'线路'.$value['startcity'].'->'.$value['endcity'].'已超时');
+                      $this->hanldlog($value['create_user_id'],'线路'.$value['startcity'].'->'.$value['endcity'].'已超时');
                     }
                 }
             }
@@ -573,8 +576,109 @@ class CrontabController extends CommonController
                 }
             }
         }
+    }
+
+    /*
+     * 统计每天的应收应付
+     * */
+    public function actionDay_count(){
+        $starttime_sel = date('Y-m-d',time());
+        $endtime_sel = date('Y-m-d',time());
+        $this->count_price($starttime_sel,$endtime_sel,1);
+    }
+
+    /*
+     *统计每月 每周 每年 应收应付
+     * */
+    public function actionCount(){
+        // 当前日期
+        $sdefaultDate = date("Y-m-d");
+        // $first =1 表示每周星期一为开始日期 0表示每周日为开始日期
+        $first = 1;
+        // 获取当前周的第几天 周日是 0 周一到周六是 1 - 6
+        $w = date('w',strtotime($sdefaultDate));
+        // 获取本周开始日期，如果$w是0，则表示周日，减去 6 天
+        $week_start = date('Y-m-d',strtotime("$sdefaultDate -" . ($w ? $w - $first : 6) . ' days'));
+        // 本周结束日期
+        $week_end = date('Y-m-d',strtotime("$week_start +6 days"));
+        $this->count_price($week_start,$week_end,2);
+    }
+
+    public function actionMonth_count(){
+        $start = date('Y-m-01', strtotime(date("Y-m-d")));
+        $end = date('Y-m-d', strtotime("$start +1 month -1 day"));
+        $this->count_price($start,$end,3);
 
     }
 
+    public function actionYear_count(){
+        $start = date('Y-01-01', time());
+        $end = date('Y-12-31', time());
+        $this->count_price($start,$end,4);
+    }
+
+    public function count_price($start,$end,$type){
+        $starttime_sel = $start.' 00:00:00';
+        $endtime_sel = $end.' 23:59:59';
+        $payment = AppPayment::find()
+            ->select('sum(pay_price),sum(truepay)')
+            ->andWhere(['between','create_time',$starttime_sel,$endtime_sel])
+            ->asArray()
+            ->one();
+        if (!$payment['sum(pay_price)']){
+            $payment['sum(pay_price)'] = '0.00';
+        }
+        if (!$payment['sum(truepay)']){
+            $payment['sum(truepay)'] = '0.00';
+        }
+        $receive = AppReceive::find()
+            ->select('sum(receivprice),sum(trueprice)')
+            ->andWhere(['between','create_time',$starttime_sel,$endtime_sel])
+            ->asArray()
+            ->one();
+        if (!$receive['sum(receivprice)']){
+            $receive['sum(receivprice)'] = '0.00';
+        }
+        if (!$receive['sum(trueprice)']){
+            $receive['sum(trueprice)'] = '0.00';
+        }
+
+        $model = AppPriceCount::find()->where(['type'=>$type])->one();
+        if ($model){
+            $model->receiveprice = $receive['sum(receivprice)'];
+            $model->truereceive = $receive['sum(trueprice)'];
+            $model->paymentprice = $payment['sum(pay_price)'];
+            $model->truepayment = $payment['sum(truepay)'];
+        }else{
+            $model = new AppPriceCount();
+            $model->receiveprice = $receive['sum(receivprice)'];
+            $model->truereceive = $receive['sum(trueprice)'];
+            $model->paymentprice = $payment['sum(pay_price)'];
+            $model->truepayment = $payment['sum(truepay)'];
+            $model->type = $type;
+
+        }
+        $model->save();
+    }
+
+    /*
+     * 车辆定时下线
+     * */
+    public function actionUnline_car(){
+        $list = Car::find()->where(['line_state'=>2,'delete_flag'=>'Y'])->asArray()->all();
+        if (count($list)<1){
+            return false;
+        }
+        foreach($list as $key => $value){
+            $car = Car::findOne($value['id']);
+            if (time() > strtotime($value['endtime']) ) {
+                $car->line_state = 1;
+                $res = $car->save();
+                if ($res){
+                    $this->hanldlog($value['create_id'],'车辆'.$value['carnumber'].'下线');
+                }
+            }
+        }
+    }
 }
 

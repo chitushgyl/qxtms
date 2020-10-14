@@ -41,15 +41,15 @@ echo \Yii::$app->view->renderFile('@app/views/admin/base.php');
     <script type="text/html" id="options">
         <div class="layui-btn-group">
             <?php if(can('admin.attestation.view')){?>
-                <a class="layui-btn layui-btn-primary layui-btn-sm " lay-event="view">VIEW</a>
+                <a class="layui-btn layui-btn-primary layui-btn-sm " lay-event="view">详情</a>
             <?php } ?>
             {{# if(d.state==1){ }}
             <?php if(can('admin.attestation.success')){?>
-                <a class="layui-btn layui-btn-sm" lay-event="edit">PASS</a>
+                <a class="layui-btn layui-btn-sm" lay-event="edit">通过</a>
             <?php } ?>
 
             <?php if(can('admin.attestation.fail')){?>
-                <a class="layui-btn layui-btn-danger layui-btn-sm " lay-event="del">FAIL</a>
+                <a class="layui-btn layui-btn-danger layui-btn-sm " lay-event="del">不通过</a>
             <?php } ?>
             {{# }else{ }}
             {{# } }}

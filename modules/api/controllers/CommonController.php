@@ -181,6 +181,54 @@ class CommonController extends Controller
         return $tree;
     }    
 
+    // 左边菜单栏
+    public function left_auth_four($user){
+        $tree = $auth = [];
+        // 公司账户 只有主账号才能看到
+        if ($user->admin_id == 1 && $user->com_type == 1) {
+            $parent_group_id = $user->parent_group_id;
+            // $group = AppGroup::findOne($parent_group_id);
+            $level = AppLevel::findOne(4);
+            $auth = $level->auth;
+            $role_ids = explode(',',$auth);
+            $auth = AppAuthLeft::find()
+                ->select(['id','display_name','route','parent_id','icon','num'])
+                ->where(['use_flag'=>'Y'])
+                ->andWhere(['in','id',$role_ids])
+                ->andWhere(['!=','route','/group_account/index'])
+                ->orderBy(['sort'=>SORT_ASC])
+                ->asArray()
+                ->all();
+            //主账号
+            // $auth = AppAuthLeft::find()
+            //     ->select(['id','display_name','route','parent_id','icon'])
+            //     ->where(['use_flag'=>'Y'])
+            //     ->andWhere(['!=','route','/group_account/index'])
+            //     ->orderBy(['sort'=>SORT_ASC])
+            //     ->asArray()
+            //     ->all();
+        } else {
+            //子账号
+            $role_id = $user->authority_id;
+            if ($role_id) {
+                $role_auth = AppRole::find()->select(['role_id','role_auth'])->where(['role_id'=>$role_id])->one();
+                $role_ids = explode(',',$role_auth->role_auth);
+                $auth = AppAuthLeft::find()
+                    ->select(['id','display_name','route','parent_id','icon','num'])
+                    ->where(['use_flag'=>'Y'])
+                    ->andWhere(['in','id',$role_ids])
+                    ->andWhere(['!=','route','/group_account/index'])
+                    ->orderBy(['sort'=>SORT_ASC])
+                    ->asArray()
+                    ->all();
+            } 
+        }
+        if ($auth) {
+            $tree = list_to_tree($auth);
+        }
+        return $tree;
+    }    
+
     public function left_auth_user($user){
         $tree = $auth = [];
         $level = AppLevel::find()->where(['level_id'=>1])->one();
@@ -363,6 +411,19 @@ class CommonController extends Controller
                     }else{
                         $info = AppRole::find()->select(['role_auth'])->where(['role_id'=>$user->authority_id,'use_flag'=>'Y'])->one()->role_auth;
                     }
+                } else if ($chitu == 4) {
+                    $auth_id_set = AppAuthLeft::find()->select(['id'])->where(['route'=>$authstr,'use_flag'=>'Y','status'=>4])->one();
+                    if ($auth_id_set) {
+                        $auth_id = $auth_id_set;
+                    }
+                    if ($user->admin_id == 1 && $user->com_type == 1){
+                        if ($user->authority_id == ''){
+                            $user->authority_id = 1;
+                        }
+                        $info = AppLevel::find()->select(['auth'])->where(['level_id'=>4])->one()->auth;
+                    }else{
+                        $info = AppRole::find()->select(['role_auth'])->where(['role_id'=>$user->authority_id,'use_flag'=>'Y'])->one()->role_auth;
+                    }
                 }
 
                 $auth_arr = explode(',',$info);
@@ -499,12 +560,39 @@ class CommonController extends Controller
                     // 查找页面内所有权限
                     $auth_list = AppAuthLeft::find()->select(['id','display_name','route'])->where(['parent_id'=>$auth_id->id,'use_flag'=>'Y'])->asArray()->all();
                 }
+            } else if ($chitu == 4) {
+                $auth_id_set = AppAuthLeft::find()->select(['id'])->where(['route'=>$authstr,'use_flag'=>'Y','status'=>4])->one();
+                if ($auth_id_set) {
+                    $auth_id = $auth_id_set;
+                }
+                if ($user->admin_id == 1 && $user->com_type == 1){
+                    if ($user->authority_id == ''){
+                        $user->authority_id = 1;
+                    }
+                    $auth_btn = 'all';
+                    $info = AppLevel::find()->select(['auth'])->where(['level_id'=>4])->one()->auth;
+                    $data['auth'] = $auth_btn;
+                    $auth_list = AppAuthLeft::find()->select(['id','display_name','route'])->where(['parent_id'=>$auth_id->id,'use_flag'=>'Y'])->asArray()->all();
+                    $arr_info = explode(',',$info);
+                    $list_new = [];
+                    foreach ($auth_list as $k => $v) {
+                        if (in_array($v['id'],$arr_info)) {
+                            $list_new[] = $v;
+                        }
+                    }
+                    $auth_list = $list_new;
+                }else{
+                    $info = AppRole::find()->select(['role_auth'])->where(['role_id'=>$user->authority_id,'use_flag'=>'Y'])->one()->role_auth;
+                    // 查找页面内所有权限
+                    $auth_list = AppAuthLeft::find()->select(['id','display_name','route'])->where(['parent_id'=>$auth_id->id,'use_flag'=>'Y'])->asArray()->all();
+                }
             }
             $auth_arr = explode(',',$info);
             if (!in_array($auth_id->id,$auth_arr)){
                 $data['status'] = 401;
                 $data['msg'] = '无权限操作！';
                 $data['info'] = $info;
+                $data['chitu'] = $chitu;
                 $data['id'] = $auth_id->id;
                 echo json_encode($data);
                 exit;
@@ -874,7 +962,7 @@ class CommonController extends Controller
         $rowCnt = $currSheet->getHighestRow();   //获取总行数
         $data = array();
         // 行
-        for($_row=$length; $_row<$rowCnt-$length; $_row++){  //读取内容
+        for($_row=$length; $_row<=$rowCnt; $_row++){  //读取内容
             // 列
             for($_column=0; $_column<=$columnCnt; $_column++){  
                 $cellId = $cellName[$_column].$_row;  
@@ -1179,12 +1267,14 @@ class CommonController extends Controller
 
 
     /*
-     *
+     *合并订单统计重量，体积，数量
      * */
     public function get_params($id,$name){
         $arr = AppOrder::find()->where(['in','id',$id])->sum($name);
         return $arr;
     }
+
+
 
 
     public static function getfirstchar($s0){

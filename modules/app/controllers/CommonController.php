@@ -7,9 +7,11 @@ namespace app\modules\app\controllers;
  */
 
 use app\models\AppAuthLeft;
+use app\models\AppAuthApp;
 use app\models\AppAuthTop;
 use app\models\AppCartype;
 use app\models\AppLevel;
+use app\models\AppLevelAppCarriage;
 use app\models\AppLog;
 use app\models\AppPickorder;
 use app\models\AppRole;
@@ -33,6 +35,7 @@ use app\models\Upload;
 
 class CommonController extends Controller
 {
+    public $url;
     public $request;
     public $session;
     public $enableCsrfValidation = false;
@@ -45,6 +48,7 @@ class CommonController extends Controller
         $session = Yii::$app->session;
         $this->request = Yii::$app->request;
         $this->session = $session;
+        $this->url = \Yii::$app->params['RETRUN_URL'];
     }
 
     public function init(){
@@ -68,6 +72,22 @@ class CommonController extends Controller
         }
     }
 
+    public function format_time($time){
+        $res = '';
+        if ($time) {
+            $arr = explode(' ',$time);
+            if ($arr) {
+                $month = $arr[0];
+                $day = $arr[1];
+                $arr_m = explode('-',$month);
+                $arr_d = explode(':',$day);
+                $res = $arr_m[1] .'-'. $arr_m[2] . ' '.$arr_d[0].':'.$arr_d[1];
+            }
+        }
+        return $res;
+
+    }
+
     // 数据返回结果
     public function resultInfo($data){
         Yii::$app->response->format = Response::FORMAT_JSON;
@@ -85,6 +105,168 @@ class CommonController extends Controller
         $data = json_decode(base64_decode($data));
         return $data;
     }
+
+    // APP权限
+    public function app_auth_auth($user,$auth =1){
+        $tree = $auth = [];
+        // 公司账户 只有主账号才能看到
+        if ($auth == 1) {
+            if ($user->admin_id == 1) {
+                $level = AppLevelAppCarriage::find()->where(['id'=>1])->one();
+                $role_ids = explode(',',$level->app_auth);
+                $auth = AppAuthApp::find()
+                    ->select(['id','display_name','route','parent_id','icon','num'])
+                    ->where(['use_flag'=>'Y'])
+                    ->andWhere(['in','id',$role_ids])
+                    ->orderBy(['sort'=>SORT_ASC])
+                    ->asArray()
+                    ->all();
+            } else {
+                $role_id = $user->app_role_id;
+                if ($role_id) {
+                    $role_auth = AppRole::find()->select(['role_id','app_auth'])->where(['role_id'=>$role_id])->one();
+                    $role_ids = explode(',',$role_auth->app_auth);
+                    $auth = AppAuthApp::find()
+                        ->select(['id','display_name','route','parent_id','icon','num'])
+                        ->where(['use_flag'=>'Y'])
+                        ->andWhere(['in','id',$role_ids])
+                        ->orderBy(['sort'=>SORT_ASC])
+                        ->asArray()
+                        ->all();
+                } 
+            }
+
+        } else if ($auth == 2) {
+            if ($user->admin_id == 1) {
+                $level = AppLevelAppCarriage::find()->where(['id'=>2])->one();
+                $role_ids = explode(',',$role_auth->app_auth);
+                $auth = AppAuthApp::find()
+                    ->select(['id','display_name','route','parent_id','icon','num'])
+                    ->where(['use_flag'=>'Y'])
+                    ->andWhere(['in','id',$role_ids])
+                    ->orderBy(['sort'=>SORT_ASC])
+                    ->asArray()
+                    ->all();
+            } else {
+                $role_id = $user->app_role_id;
+                if ($role_id) {
+                    $role_auth = AppRole::find()->select(['role_id','app_auth'])->where(['role_id'=>$role_id])->one();
+                    $role_ids = explode(',',$role_auth->app_auth);
+                    $auth = AppAuthApp::find()
+                        ->select(['id','display_name','route','parent_id','icon','num'])
+                        ->where(['use_flag'=>'Y'])
+                        ->andWhere(['in','id',$role_ids])
+                        ->orderBy(['sort'=>SORT_ASC])
+                        ->asArray()
+                        ->all();
+                } 
+            }
+        }
+
+        if ($auth) {
+            $tree = list_to_tree($auth);
+        }
+        return $tree;
+    }     
+
+    // APP权限
+    public function app_auth_auth_first($user,$role = 1){
+        $tree = $auth = [];
+        // 公司账户 只有主账号才能看到
+        if ($role == 1) {
+            if ($user->admin_id == 1) {
+                $level = AppLevelAppCarriage::find()->where(['level_id'=>1])->one();
+                $role_ids = explode(',',$level->auth);
+                $auth = AppAuthApp::find()
+                    ->select(['id','display_name','route','parent_id','icon','num'])
+                    ->where(['use_flag'=>'Y'])
+                    ->andWhere(['in','id',$role_ids])
+                    ->orderBy(['sort'=>SORT_ASC])
+                    ->asArray()
+                    ->all();
+            } else {
+                $role_id = $user->app_role_id;
+                if ($role_id) {
+                    $role_auth = AppRole::find()->select(['role_id','app_auth'])->where(['role_id'=>$role_id])->one();
+                    $role_ids = explode(',',$role_auth->app_auth);
+                    $auth = AppAuthApp::find()
+                        ->select(['id','display_name','route','parent_id','icon','num'])
+                        ->where(['use_flag'=>'Y'])
+                        ->andWhere(['in','id',$role_ids])
+                        ->orderBy(['sort'=>SORT_ASC])
+                        ->asArray()
+                        ->all();
+                } 
+            }
+
+        } else if ($role == 2) {
+            if ($user->admin_id == 1) {
+                $level = AppLevelAppCarriage::find()->where(['level_id'=>2])->one();
+                $role_ids = explode(',',$level->auth);
+                $auth = AppAuthApp::find()
+                    ->select(['id','display_name','route','parent_id','icon','num'])
+                    ->where(['use_flag'=>'Y'])
+                    ->andWhere(['in','id',$role_ids])
+                    ->orderBy(['sort'=>SORT_ASC])
+                    ->asArray()
+                    ->all();
+            } else {
+                $role_id = $user->app_role_id;
+                if ($role_id) {
+                    $role_auth = AppRole::find()->select(['role_id','app_auth'])->where(['role_id'=>$role_id])->one();
+                    $role_ids = explode(',',$role_auth->app_auth);
+                    $auth = AppAuthApp::find()
+                        ->select(['id','display_name','route','parent_id','icon','num'])
+                        ->where(['use_flag'=>'Y'])
+                        ->andWhere(['in','id',$role_ids])
+                        ->orderBy(['sort'=>SORT_ASC])
+                        ->asArray()
+                        ->all();
+                } 
+            }
+        }
+        if ($auth) {
+            $tree = list_to_tree($auth);
+        }
+        return $tree;
+    }       
+
+    // APP权限
+    public function app_auth_list($user,$role = 1,$id){
+        $tree = $auth = $user_tree = [];
+        // 公司账户 只有主账号才能看到
+        if ($role == 1) {
+            $level = AppLevelAppCarriage::find()->where(['level_id'=>1])->one();
+        } else if ($role == 2) {
+            $level = AppLevelAppCarriage::find()->where(['level_id'=>2])->one();
+        }
+        $role_ids = explode(',',$level->auth);
+        $auth = AppAuthApp::find()
+            ->select(['id','display_name','route','parent_id','icon','num'])
+            ->where(['use_flag'=>'Y'])
+            ->andWhere(['in','id',$role_ids])
+            ->orderBy(['sort'=>SORT_ASC])
+            ->asArray()
+            ->all();
+
+        $role_auth = AppRole::find()->select(['role_id','app_auth'])->where(['role_id'=>$id])->one();
+        $arr = [];
+        if ($role_auth->app_auth) {
+            $arr = explode(',',$role_auth->app_auth);
+        }
+
+        if ($auth) {
+            foreach ($auth as $k => $v) {
+                if (in_array($v['id'], $arr)) {
+                    $auth[$k]['class_'] = 'auth_active';
+                } else {
+                   $auth[$k]['class_'] = ''; 
+                }
+            }
+            $tree = list_to_tree($auth);
+        }        
+        return ['tree'=>$tree,'arr'=>$arr];
+    }     
 
     // 左边菜单栏
     public function left_auth($user){
@@ -293,7 +475,7 @@ class CommonController extends Controller
     /*
      * 校验token
      * */
-    public function check_token($token,$check_auth = false,$chitu = 2){
+    public function check_token($token,$check_auth = false){
         
         // 解密字符串
         $token_decode = $this->decode($token);
@@ -337,41 +519,28 @@ class CommonController extends Controller
             }
         }
 
-        if ($check_auth) {
+        if ($check_auth && $user->admin_id != 1) {
+            $module = Yii::$app->controller->module->id;
             $controller = Yii::$app->controller->id;
             $action = Yii::$app->controller->action->id;
-            $authstr = strtolower('/'.$controller.'/'.$action);
-            $auth_id = AppAuthLeft::find()->select(['id'])->where(['route'=>$authstr,'use_flag'=>'Y'])->one();
-
+            $authstr = strtolower($module.'.'.$controller.'.'.$action);
+            $auth_id = AppAuthApp::find()->select(['id'])->where(['route'=>$authstr,'use_flag'=>'Y'])->one();
             if ($auth_id){
-                if ($chitu == 1) {
-                    $info = AppLevel::find()->select(['auth'])->where(['level_id'=>1])->one()->auth;
-                } else if ($chitu == 2) {
-                    if ($user->admin_id == 1 && $user->com_type == 1){
-                        if ($user->authority_id == ''){
-                            $user->authority_id = 1;
-                        }
-                        $info = AppLevel::find()->select(['auth'])->where(['level_id'=>3])->one()->auth;
-                    }else{
-                        $info = AppRole::find()->select(['role_auth'])->where(['role_id'=>$user->authority_id,'use_flag'=>'Y'])->one()->role_auth;
+                if ($user->app_role_id) {
+                    $info = AppRole::find()->select(['app_auth'])->where(['role_id'=>$user->app_role_id,'use_flag'=>'Y'])->one()->app_auth;
+                    $auth_arr = explode(',',$info);
+                    if (!in_array($auth_id->id,$auth_arr)){
+                        $data = $this->encrypt(['code'=>401,'msg'=>'无权限操作！']);
+                        echo json_encode($data);
+                        exit;
                     }
-                } else if ($chitu == 3) {
-                    if ($user->admin_id == 1 && $user->com_type == 1){
-                        if ($user->authority_id == ''){
-                            $user->authority_id = 1;
-                        }
-                        $info = AppLevel::find()->select(['auth'])->where(['level_id'=>2])->one()->auth;
-                    }else{
-                        $info = AppRole::find()->select(['role_auth'])->where(['role_id'=>$user->authority_id,'use_flag'=>'Y'])->one()->role_auth;
-                    }
-                }
-
-                $auth_arr = explode(',',$info);
-                if (!in_array($auth_id->id,$auth_arr)){
+                    
+                } else {
                     $data = $this->encrypt(['code'=>401,'msg'=>'无权限操作！']);
                     echo json_encode($data);
                     exit;
                 }
+
             }else{
                 $data = $this->encrypt(['code'=>402,'msg'=>'系统正在升级！']);
                 echo json_encode($data);
@@ -1331,5 +1500,13 @@ class CommonController extends Controller
 
         }
         return $kilo;
+    }
+
+    public function send_push_message($data,$city){
+//        import('getui.GeTui');
+        require_once(Yii::getAlias('@vendor') . '/getui/GeTui.php');
+        $gt = new \getui\GeTui();
+        $a =  $gt->pushMessageToApp($data, $city);
+        return $a;
     }
 }

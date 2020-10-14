@@ -35,6 +35,7 @@ class LineController extends CommonController
         $page = $input['page'] ?? 1;
         $limit = $input['limit'] ?? 10;
         $line_city = $input['line_city'] ?? '';
+        $chitu = $input['chitu'];
 
         $data = [
             'code' => 200,
@@ -47,7 +48,7 @@ class LineController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppLine::find();
         if ($line_city) {
             $list->orWhere(['like','startcity',$line_city])
@@ -104,7 +105,9 @@ class LineController extends CommonController
         $transfer = $input['transfer'] ?? '';
         $start_time = $input['start_time'];//发车时间
         $arrive_time = $input['arrive_time'];
+        $temperture = $input['temperture'] ?? '';
         $carriage_id = $input['carriage_id'] ?? '';
+        $chitu = $input['chitu'];
         if (empty($token) && !$group_id){
             $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -139,7 +142,7 @@ class LineController extends CommonController
             $data = $this->encrypt(['code'=>'400','msg'=>'请填写预计到达时间']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $this->check_group_auth($group_id,$user);
         $arr_startstr = json_decode($begin_store,true);
@@ -289,7 +292,7 @@ class LineController extends CommonController
         foreach($price as $key =>$value){
             $price_a[] = $value['price'];
         }
-
+        $model->temperture = $temperture;
         $model->price = min($price_a);
         $model->eprice = min($price_a)*1000/2.5;
 
@@ -360,6 +363,8 @@ class LineController extends CommonController
         $start_time = $input['start_time'];//发车时间
         $arrive_time = $input['arrive_time'];
         $carriage_id = $input['carriage_id'];
+        $temperture = $input['temperture'] ??'';
+        $chitu = $input['chitu'];
         if (empty($token) || !$group_id || !$id){
             $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -394,7 +399,7 @@ class LineController extends CommonController
             $data = $this->encrypt(['code'=>'400','msg'=>'请填写预计到达时间']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $model = AppLine::findOne($id);
         $this->check_group_auth($model->group_id,$user);
@@ -518,6 +523,7 @@ class LineController extends CommonController
         $model->startcity = $startcity;
         $model->endcity = $endcity;
         $model->weight_price =$weight_price;
+        $model->temperture = $temperture;
         $model->line_price = $line_price;
         $model->picktype = $picktype;
         $model->start_time = $start_time;
@@ -550,11 +556,12 @@ class LineController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppLine::find()->where(['id'=>$id])->one();
         $line = AppBulk::find()->where(['shiftid'=>$id])->asArray()->all();
@@ -582,11 +589,12 @@ class LineController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppLine::find()->where(['id'=>$id])->one();
         if($model->state == 5){
@@ -624,11 +632,12 @@ class LineController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = AppLine::find()->where(['id'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -655,6 +664,7 @@ class LineController extends CommonController
         $page = $input['page'] ?? 1;
         $limit = $input['limit'] ?? 10;
         $line_city = $input['line_city'] ?? '';
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -666,7 +676,7 @@ class LineController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = AppLine::find();
         if ($line_city) {
             $list->orWhere(['like','startcity',$line_city])
@@ -814,11 +824,12 @@ class LineController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $shiftid = $input['shiftid'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($shiftid)){
             $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $line = AppLine::findOne($shiftid);
         if ($line->line_state == 1){
             $data = $this->encrypt(['code'=>'400','msg'=>'线路已下线']);
@@ -851,11 +862,12 @@ class LineController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $shiftid = $input['shiftid'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($shiftid)){
             $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $line = AppLine::findOne($shiftid);
         $this->check_group_auth($line->group_id,$user);
@@ -883,6 +895,7 @@ class LineController extends CommonController
           $id = $input['id'];
           $price = $input['price'];
           $lowprice = $input['lowprice'];
+          $chitu = $input['chitu'];
           if (empty($token) || empty($id)){
               $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
               return $this->resultInfo($data);
@@ -913,11 +926,12 @@ class LineController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $bulk = AppBulk::find()
             ->alias('a')

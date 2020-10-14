@@ -58,18 +58,18 @@ class LeftController extends AdminBaseController
             // $flag_error = false;
                 // $this->withErrors('路由'.$id);
             // 如果路由不为空,查看是否已经存在该路由
-            if(!empty($this->request->bodyParams['route'])){
-                $have = AppAuthLeft::find()->where(['route'=>$this->request->bodyParams['route']])
-                    ->andWhere(["<>",'id',$id])
-                    ->asArray()
-                    ->all();
-                if($flag_error && !empty($have)){
-                    $flag_error = false;
+            // if(!empty($this->request->bodyParams['route'])){
+            //     $have = AppAuthLeft::find()->where(['route'=>$this->request->bodyParams['route']])
+            //         ->andWhere(["<>",'id',$id])
+            //         ->asArray()
+            //         ->all();
+            //     if($flag_error && !empty($have)){
+            //         $flag_error = false;
 
-                    $this->withErrors(json_encode($have));
-                    $this->withErrors('该路由名称已经存在,请重新添加!!');
-                }
-            }
+            //         $this->withErrors(json_encode($have));
+            //         $this->withErrors('该路由名称已经存在,请重新添加!!');
+            //     }
+            // }
             // 更新
             $permission = AppAuthLeft::findOne(['id'=>$id]);
             $permission->parent_id = $this->request->bodyParams['parent_id'];
@@ -108,15 +108,15 @@ class LeftController extends AdminBaseController
                 $this->withErrors('路由显示名称不能为空!!');
             }
             // 如果路由不为空,查看是否已经存在该路由
-            if(!empty($this->request->bodyParams['route'])){
-                $have = AppAuthLeft::find()->where(['route'=>$this->request->bodyParams['route']])
-                    ->asArray()
-                    ->all();
-                if($flag_error && !empty($have)){
-                    $flag_error = false;
-                    $this->withErrors('该路由名称已经存在,请重新添加!');
-                }
-            }
+            // if(!empty($this->request->bodyParams['route'])){
+            //     $have = AppAuthLeft::find()->where(['route'=>$this->request->bodyParams['route']])
+            //         ->asArray()
+            //         ->all();
+            //     if($flag_error && !empty($have)){
+            //         $flag_error = false;
+            //         $this->withErrors('该路由名称已经存在,请重新添加!');
+            //     }
+            // }
             // 新增
             $permission->parent_id = $this->request->bodyParams['parent_id'];
             $permission->display_name = $this->request->bodyParams['display_name'];

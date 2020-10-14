@@ -22,6 +22,7 @@ class AccountController extends CommonController
         $limit = $input['limit'] ?? 10;
         $name = $input['name'] ?? '';
         $use_flag = $input['use_flag'] ?? '';
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -33,7 +34,7 @@ class AccountController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $user = $check_result['user'];
         $where = [];
         $list = User::find()
@@ -97,6 +98,7 @@ class AccountController extends CommonController
         $password2 = $input['pwd2'];
         $name = $input['name'];
         $true_name = $input['true_name'];
+        $chitu = $input['chitu'];
         if(empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -149,7 +151,7 @@ class AccountController extends CommonController
             $flag = true;
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $this->check_group_auth($group_id,$user);
 
@@ -219,6 +221,7 @@ class AccountController extends CommonController
         $password2 = $input['pwd2'];
         $name = $input['name'];
         $true_name = $input['true_name'];
+        $chitu = $input['chitu'];
 
         if(empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
@@ -227,7 +230,7 @@ class AccountController extends CommonController
         $transaction = User::getDb()->beginTransaction();
         try {
             $model = User::find()->where(['id'=>$id])->one();
-            $check_result = $this->check_token($token,true);//验证令牌
+            $check_result = $this->check_token($token,true,$chitu);//验证令牌
             $user = $check_result['user'];
             if ($model->admin_id != 1) {
                 if(empty($login)){
@@ -353,12 +356,13 @@ class AccountController extends CommonController
         $input = $request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if(empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = User::find()->where(['id'=>$id])->one();
         $model->delete_flag = 'N';
@@ -382,12 +386,13 @@ class AccountController extends CommonController
         $input = $request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if(empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = User::find()->where(['id'=>$id])->one();
         $model->use_flag = 'Y';
@@ -412,12 +417,13 @@ class AccountController extends CommonController
         $input = $request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if(empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = User::find()->where(['id'=>$id])->one();
         $model->use_flag = 'N';

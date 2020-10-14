@@ -27,6 +27,7 @@ class UserController extends CommonController
             }
             $username = $post['username'];
             $password = md5($post['password']);
+            $clientid = $post['clientid'] ?? '';
             $model = new User();
             $user = User::find()->where(['login'=>$username])->one();
             //验证账号信息
@@ -38,12 +39,16 @@ class UserController extends CommonController
             if ($user->pwd == $password && $user->use_flag == 'Y' && $user->delete_flag == 'Y'){
                 $res = User::find()
                     ->alias('n')
-                    ->select(['n.id','n.login','n.name','n.tel','n.group_id','n.true_name','n.userimage','n.sex','n.balance','n.position','n.admin_id','n.parent_group_id','n.com_type','b.group_name','a.group_name p_group_name','a.level_id','a.expire_time','b.main_id'])
+                    ->select(['n.id','n.login','n.name','n.tel','n.group_id','n.true_name','n.userimage','n.sex','n.balance','n.position','n.admin_id','n.parent_group_id','n.com_type','b.group_name','a.group_name p_group_name','a.level_id','a.expire_time','b.level_id','b.main_id','r.name role_name'])
+                    ->leftJoin('app_role r','r.role_id = n.app_role_id')
                     ->leftJoin('app_group a','n.parent_group_id = a.id')
                     ->leftJoin('app_group b','n.group_id = b.id')
                     ->where(['n.login'=>$username])
                     ->asArray()
                     ->one();
+                $account = User::findOne($res['id']);
+                $account->clientid = $clientid;
+                $account->save();
                 $res['token'] = $this->product_token($user->id);
                 $this->hanldlog($res['id'],$res['login'].'登陆成功');
                 $auths = $this->left_auth($user);
@@ -79,6 +84,7 @@ class UserController extends CommonController
         $phone = $input['phone'];
         $code = $input['code'];
         $where = $input['where'];
+        $clientid = $input['clientid'] ?? '';
         // 判断是否传值
         if(empty($phone)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误！']);
@@ -113,12 +119,16 @@ class UserController extends CommonController
                 if ($model->use_flag == 'Y' && $model->delete_flag == 'Y'){
                     $user = User::find()
                         ->alias('n')
-                        ->select(['n.id','n.login','n.name','n.tel','n.group_id','n.true_name','n.userimage','n.sex','n.balance','n.position','n.admin_id','n.parent_group_id','n.com_type','b.group_name','a.group_name p_group_name','a.level_id','a.expire_time','b.main_id'])
+                        ->select(['n.id','n.login','n.name','n.tel','n.group_id','n.true_name','n.userimage','n.sex','n.balance','n.position','n.admin_id','n.parent_group_id','n.com_type','b.group_name','a.group_name p_group_name','a.level_id','a.expire_time','b.level_id','b.main_id','r.name role_name'])
+                        ->leftJoin('app_role r','r.role_id = n.app_role_id')
                         ->leftJoin('app_group a','n.parent_group_id = a.id')
                         ->leftJoin('app_group b','n.group_id = b.id')
                         ->where(['n.login'=>$phone])
                         ->asArray()
                         ->one();
+                    $account = User::findOne($user['id']);
+                    $account->clientid = $clientid;
+                    $account->save();
                     $user['token'] = $this->product_token($user['id']);
                     $this->delete_code($phone);
 
@@ -156,6 +166,7 @@ class UserController extends CommonController
                     $model->com_type = 1;
                     $model->group_id = $model->parent_group_id = $group->id;;
                     $model->admin_id = 1;
+                    $model->clientid = $clientid;
                     $res = $model->save();
                     if ($arr && $res){
                         $transaction->commit();
@@ -368,13 +379,13 @@ class UserController extends CommonController
             $group->name = $name;
             $group->group_name = $group_name;
             $group->main_id = 1;
-            $group->level_id = 3;
+            $group->level_id = 2;
             $arr = $group->save();
 
             $model = new User();
             $model->tel = $model->login = $model->name = $phone;
             $model->pwd = md5($password);
-            $model->level_id = 3;
+            $model->level_id = 2;
             $model->authority_id = 1;
             $model->com_type = 1;
             $model->group_id = $model->parent_group_id = $group->id;;
@@ -512,6 +523,8 @@ class UserController extends CommonController
                 $auth = $this->left_auth($user);
             } else if ($type == 2) {
                 $auth = $this->left_auth_two($user);
+            } else if ($type == 4) {
+                $auth = $this->left_auth_four($user);
             }
             $data = $this->encrypt(['code'=>200,'msg'=>'ok','data'=>$auth,'type'=>$type]);
             return $this->resultInfo($data); 

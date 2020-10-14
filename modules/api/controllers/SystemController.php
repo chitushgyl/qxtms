@@ -21,11 +21,12 @@ class SystemController extends CommonController
         $request = Yii::$app->request;
         $input = $request->post();
         $token = $input['token'];
+        $chitu = $input['chitu'];
        if (empty($token)){
            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
            return $this->resultInfo($data);
        }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         if ($user->admin_id == 1){
             $info = AppLevel::find()->select(['auth'])->where(['level_id'=>$user->parent_group_id])->asArray()->one();

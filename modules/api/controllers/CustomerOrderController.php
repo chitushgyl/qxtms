@@ -43,7 +43,7 @@ class CustomerOrderController extends CommonController
         $model = AppCustomerAccount::find()
             ->alias('a')
             ->leftJoin('app_customer b','a.customer_id = b.id')
-            ->select('a.username,a.group_id,a.customer_id As id,b.all_name,b.delete_flag,b.use_flag')
+            ->select('a.username,a.group_id,a.customer_id As id,b.all_name,b.delete_flag,b.use_flag,b.paystate')
             ->where(['a.username'=>$username,'a.password'=>md5($password)])
             ->asArray()
             ->one();
@@ -90,7 +90,8 @@ class CustomerOrderController extends CommonController
             ->select(['v.*', 't.carparame','a.group_name'])
             ->leftJoin('app_cartype t', 'v.cartype=t.car_id')
             ->leftJoin('app_group a','a.id= v.group_id')
-            ->where(['v.company_id' => $customer_id,'v.group_id'=>$group_id,'v.delete_flag' => 'Y']);
+            ->where(['v.company_id' => $customer_id,'v.group_id'=>$group_id,'v.delete_flag' => 'Y'])
+            ->andwhere(['!=','v.order_type',11]);
         if ($ordernumber) {
             $list->andWhere(['like', 'v.ordernumber', $ordernumber]);
         }
@@ -403,6 +404,8 @@ class CustomerOrderController extends CommonController
         $id = $input['id'];
         if ($id) {
             $model = AppOrder::find()->where(['id'=>$id])->asArray()->one();
+            $model['receipt'] = json_decode($model['receipt'],true);
+            $model['driverinfo'] = json_decode($model['driverinfo'],true);
         } else {
             $model = new AppOrder();
         }

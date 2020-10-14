@@ -72,7 +72,7 @@ class User extends \yii\db\ActiveRecord
     {
         return [
             [['login', 'pwd', 'name', 'authority_id'], 'required'],
-            [['create_time', 'update_time', 'expire_time'], 'safe'],
+            [['create_time', 'update_time', 'expire_time', 'app_role_id'], 'safe'],
             [['authority_id', 'group_id', 'user_id', 'level_id', 'admin_id', 'parent_group_id'], 'integer'],
             [['balance', 'creditmoney'], 'number'],
             [['login', 'true_name'], 'string', 'max' => 30],
@@ -125,6 +125,7 @@ class User extends \yii\db\ActiveRecord
             'creditmoney' => 'Creditmoney',
             'expire_time' => 'Expire Time',
             'com_type' => 'Com Type',
+            'app_role_id' => 'app_role_id',
         ];
     }
 

@@ -26,6 +26,7 @@ class CarriageController extends CommonController
         $limit = $input['limit'] ?? 10;
         $all_name = $input['name'] ?? '';
         $use_flag = $input['use_flag'] ?? '';
+        $chitu = $input['chitu'];
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -37,7 +38,7 @@ class CarriageController extends CommonController
             $data['msg'] = '参数错误';
             return json_encode($data);
         }
-        $check_result = $this->check_token_list($token);//验证令牌
+        $check_result = $this->check_token_list($token,$chitu);//验证令牌
         $list = Carriage::find()
             ->where(['delete_flag'=>'Y']);
         if ($all_name) {
@@ -76,6 +77,7 @@ class CarriageController extends CommonController
         $username = $input['username'];
         $password = $input['password'];
         $group_id = $input['group_id'];
+        $chitu = $input['chitu'];
         if (empty($token)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -104,7 +106,7 @@ class CarriageController extends CommonController
                 return $this->resultInfo($data);
             }
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $this->check_group_auth($group_id,$user);
         $model = new Carriage();
@@ -151,6 +153,7 @@ class CarriageController extends CommonController
         $group_id = $input['group_id'];
         $username = $input['username'];
         $password = $input['password'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
@@ -171,7 +174,7 @@ class CarriageController extends CommonController
                 return $this->resultInfo($data);
             }
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $this->check_group_auth($group_id,$user);
         $model = Carriage::find()->where(['cid'=>$id])->one();
@@ -253,11 +256,12 @@ class CarriageController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = Carriage::find()->where(['cid'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -280,11 +284,12 @@ class CarriageController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = Carriage::find()->where(['cid'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -307,11 +312,12 @@ class CarriageController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);//验证令牌
+        $check_result = $this->check_token($token,true,$chitu);//验证令牌
         $user = $check_result['user'];
         $model = Carriage::find()->where(['cid'=>$id])->one();
         $this->check_group_auth($model->group_id,$user);
@@ -364,7 +370,7 @@ class CarriageController extends CommonController
         $check_result = $this->check_token($token);
         $user = $check_result['user'];
         $group_id = $user->group_id;
-        $list = Carriage::find()->select('cid,name')->where(['group_id'=>$group_id])->asArray()->all();
+        $list = Carriage::find()->select('cid,name')->where(['group_id'=>$group_id])->orderBy(['update_time'=>SORT_DESC])->asArray()->all();
         $data = $this->encrypt(['code'=>200,'msg'=>'查询成功','data'=>$list]);
         return $this->resultInfo($data);
     }

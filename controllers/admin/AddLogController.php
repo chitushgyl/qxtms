@@ -34,8 +34,10 @@ class AddLogController  extends Controller
     const permission = '权限管理';   // 权限管理
     const note = '操作日志';   // 操作日志
     const left = 'PC左边栏管理';   
+    const app_auth = 'APP权限管理';   
     const top = 'PC头部菜单栏';   
     const appLevel = '公司等级权限';   
+    const appLevelCarriage = 'APP承运角色权限';   
     const appIpApply = '域名';   
     const setting = '参数设置';   
 

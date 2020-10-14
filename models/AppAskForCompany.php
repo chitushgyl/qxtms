@@ -3,6 +3,7 @@
 namespace app\models;
 
 use Yii;
+use yii\behaviors\TimestampBehavior;
 
 /**
  * This is the model class for table "app_ask_for_company".
@@ -29,7 +30,21 @@ class AppAskForCompany extends \yii\db\ActiveRecord
     {
         return 'app_ask_for_company';
     }
-
+    /**
+     * @inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => TimestampBehavior::className(),
+                'createdAtAttribute' => 'create_time',
+                'updatedAtAttribute' => 'update_time',
+                //'value'   => new Expression('NOW()'),
+                'value'   => function(){return date('Y-m-d H:i:s',time());},
+            ],
+        ];
+    }
     /**
      * {@inheritdoc}
      */

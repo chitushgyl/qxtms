@@ -43,6 +43,9 @@ class BulkController extends CommonController{
             ->orderBy(['update_time'=>SORT_DESC])
             ->asArray()
             ->all();
+        foreach($list as $key =>$value){
+            $list[$key]['start_time'] = $this->format_time($value['start_time']);
+        }
         foreach ($list as $k => $v) {
             $list[$k]['set_price'] = json_decode($v['weight_price'],true);
             $begin_store = json_decode($v['begin_store'],true);
@@ -188,43 +191,43 @@ class BulkController extends CommonController{
         $carriage_id = $input['carriage_id'] ?? '';
         $time = $input['time'];
         if (empty($token)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
         if(empty($startcity)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填选起始地']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填选起始地']);
             return $this->resultInfo($data);
         }
         if(empty($endcity)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填选目的地']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填选目的地']);
             return $this->resultInfo($data);
         }
         if (empty($time)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请选择发车时间']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请选择发车时间']);
             return $this->resultInfo($data);
         }
         if (empty($begin_store)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填选始发仓库地址/临时停靠点']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填选始发仓库地址/临时停靠点']);
             return $this->resultInfo($data);
         }
         if (empty($end_store)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填选目的仓库地址/临时停靠点']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填选目的仓库地址/临时停靠点']);
             return $this->resultInfo($data);
         }
         if (empty($time_week)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填写发车周期']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填写发车周期']);
             return $this->resultInfo($data);
         }
         if (empty($weight_price)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填写重量区间价格']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填写重量区间价格']);
             return $this->resultInfo($data);
         }
         if (empty($line_price)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填写干线最低收费']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填写干线最低收费']);
             return $this->resultInfo($data);
         }
 
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $user = $check_result['user'];
         $group_id = $user->group_id;
         $arr_startstr = json_decode($begin_store,true);
@@ -365,10 +368,10 @@ class BulkController extends CommonController{
         if ($res){
             $this->line_auto($model->id,'add');
             $this->hanldlog($user->id,'添加线路模型：'.$model->id.$startcity.'->'.$endcity);
-            $data = $this->encrypt(['code'=>'200','msg'=>'添加成功']);
+            $data = $this->encrypt(['code'=>200,'msg'=>'添加成功']);
             return $this->resultInfo($data);
         }else{
-            $data = $this->encrypt(['code'=>'400','msg'=>'添加失败']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'添加失败']);
             return $this->resultInfo($data);
         }
     }
@@ -450,10 +453,10 @@ class BulkController extends CommonController{
         $page = $input['page'] ?? 1;
         $limit = $input['limit'] ?? 10;
         if (empty($token)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token);//验证令牌
+        $check_result = $this->check_token($token,true);//验证令牌
         $user = $check_result['user'];
         $list = AppLineLog::find()
             ->alias('a')
@@ -477,7 +480,7 @@ class BulkController extends CommonController{
 
             $list[$k]['set_price'] = json_decode($v['weight_price'],true);
         }
-        $data = $this->encrypt(['code'=>'200','msg'=>'查询成功','data'=>$list]);
+        $data = $this->encrypt(['code'=>200,'msg'=>'查询成功','data'=>$list]);
         return $this->resultInfo($data);
     }
 
@@ -520,10 +523,10 @@ class BulkController extends CommonController{
         $page = $input['page'] ?? 1;
         $limit = $input['limit'] ?? 10;
         if (empty($token)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token);//验证令牌
+        $check_result = $this->check_token($token,true);//验证令牌
         $user = $check_result['user'];
         $list = AppLine::find();
         $list->andWhere(['group_id'=>$user->group_id,'delete_flag'=>'Y']);
@@ -544,7 +547,7 @@ class BulkController extends CommonController{
             $id = $v['id'];
             $list[$k]['count'] = AppBulk::find()->where(['paystate'=>2,'line_type'=>2])->orWhere(['in','line_type',[1,3]])->andWhere(['shiftid'=>$id])->count();
         }
-        $data = $this->encrypt(['code'=>'200','msg'=>'查询成功','data'=>$list]);
+        $data = $this->encrypt(['code'=>200,'msg'=>'查询成功','data'=>$list]);
         return $this->resultInfo($data);
 
     }
@@ -575,38 +578,38 @@ class BulkController extends CommonController{
         $centercity = $input['centercity'] ?? '';
         $time = $input['time'];
         if (empty($token) || !$id){
-            $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
         if(empty($startcity)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填选起始地']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填选起始地']);
             return $this->resultInfo($data);
         }
         if(empty($endcity)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填选目的地']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填选目的地']);
             return $this->resultInfo($data);
         }
         if (empty($time)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请选择发车时间']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请选择发车时间']);
             return $this->resultInfo($data);
         }
         if (empty($begin_store)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填选始发仓库地址/临时停靠点']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填选始发仓库地址/临时停靠点']);
             return $this->resultInfo($data);
         }
         if (empty($end_store)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填选目的仓库地址/临时停靠点']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填选目的仓库地址/临时停靠点']);
             return $this->resultInfo($data);
         }
         if (empty($time_week)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填写发车周期']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填写发车周期']);
             return $this->resultInfo($data);
         }
         if (empty($weight_price)){
-            $data = $this->encrypt(['code'=>'400','msg'=>'请填写重量区间价格']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'请填写重量区间价格']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $user = $check_result['user'];
         $group_id = $user->group_id;
         $arr_startstr = json_decode($begin_store,true);
@@ -747,10 +750,10 @@ class BulkController extends CommonController{
         if ($res){
             $this->line_auto($model->id,'edit');
             $this->hanldlog($user->id,'编辑线路模型：'.$model->id.$startcity.'->'.$endcity);
-            $data = $this->encrypt(['code'=>'200','msg'=>'编辑成功']);
+            $data = $this->encrypt(['code'=>200,'msg'=>'编辑成功']);
             return $this->resultInfo($data);
         }else{
-            $data = $this->encrypt(['code'=>'400','msg'=>'编辑失败']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'编辑失败']);
             return $this->resultInfo($data);
         }
     }
@@ -767,7 +770,7 @@ class BulkController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);//验证令牌
+        $check_result = $this->check_token($token,true);//验证令牌
         $user = $check_result['user'];
         $model = AppLineLog::find()->where(['id'=>$id])->one();
         $model->delete_flag = 'N';
@@ -824,12 +827,12 @@ class BulkController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token);//验证令牌
+        $check_result = $this->check_token($token,true);//验证令牌
         $user = $check_result['user'];
         $model = AppLine::find()->where(['id'=>$id])->one();
         $line = AppBulk::find()->where(['shiftid'=>$id])->asArray()->all();
         if (count($line) > 0){
-            $data = $this->encrypt(['code'=>'400','msg'=>'该线路下有订单不能删除！']);
+            $data = $this->encrypt(['code'=>400,'msg'=>'该线路下有订单不能删除！']);
             return $this->resultInfo($data);
         }
         $model->delete_flag = 'N';
@@ -855,7 +858,7 @@ class BulkController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token);//验证令牌
+        $check_result = $this->check_token($token,true);//验证令牌
         $user = $check_result['user'];
         $model = AppLine::find()->where(['id'=>$id])->one();
         if($model->state == 5){
@@ -897,7 +900,7 @@ class BulkController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);//验证令牌
+        $check_result = $this->check_token($token,true);//验证令牌
         $user = $check_result['user'];
         $model = AppLine::find()->where(['id'=>$id])->one();
         $model->line_state = 1;

@@ -55,12 +55,12 @@ class ReceiveController extends CommonController
             	->leftJoin('app_group g','r.compay_id=g.id');
         }
         if ($end_time && $start_time) {
-            $list->andWhere(['between','r.update_time',$start_time.' 00:00:00',$end_time.' 23:59:59']);
+            $list->andWhere(['between','r.create_time',$start_time.' 00:00:00',$end_time.' 23:59:59']);
         } else {
             if ($start_time) {
-                $list->andWhere(['>=','r.update_time',$start_time.' 00:00:00',$end_time.' 23:59:59']);
+                $list->andWhere(['>=','r.create_time',$start_time.' 00:00:00',$end_time.' 23:59:59']);
             } else if($end_time) {
-                $list->andWhere(['<=','r.update_time',$end_time.' 23:59:59']);
+                $list->andWhere(['<=','r.create_time',$end_time.' 23:59:59']);
             }
         }   
 
@@ -80,7 +80,8 @@ class ReceiveController extends CommonController
             }
         }
 
-        $list->andWhere(['r.group_id'=>$group_id]);
+        $list->andWhere(['r.group_id'=>$group_id])
+             ->andWhere(['<','r.create_time',date('Y-m-d',time()).'23:59:59']);
         $count = $list->count();
         $list = $list->offset(($page - 1) * $limit)
             ->limit($limit)
@@ -119,11 +120,12 @@ class ReceiveController extends CommonController
         $price = $input['price'];
         $remark = $input['remark'];
         $token = $input['token'];
+        $chitu = $input['chitu'];
         if (empty($token) && !$id){
             $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $model = AppReceive::findOne($id);
         if ($model) {
@@ -154,12 +156,13 @@ class ReceiveController extends CommonController
     public function actionReceive_over(){
         $input = Yii::$app->request->post();
         $id = $input['id'];
+        $chitu = $input['chitu'];
         $token = $input['token'];
         if (empty($token) && !$id){
             $data = $this->encrypt(['code'=>'400','msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $model = AppReceive::findOne($id);
         if ($model) {

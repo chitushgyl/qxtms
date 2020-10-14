@@ -71,12 +71,12 @@ class PaymentController extends CommonController
         }
 
         if ($end_time && $start_time) {
-            $list->andWhere(['between','a.update_time',$start_time.' 00:00:00',$end_time.' 23:59:59']);
+            $list->andWhere(['between','a.create_time',$start_time.' 00:00:00',$end_time.' 23:59:59']);
         } else {
             if ($start_time) {
-                $list->andWhere(['>=','a.update_time',$start_time.' 00:00:00',$end_time.' 23:59:59']);
+                $list->andWhere(['>=','a.create_time',$start_time.' 00:00:00',$end_time.' 23:59:59']);
             } else if($end_time) {
-                $list->andWhere(['<=','a.update_time',$end_time.' 23:59:59']);
+                $list->andWhere(['<=','a.create_time',$end_time.' 23:59:59']);
             }
         }
 
@@ -114,6 +114,7 @@ class PaymentController extends CommonController
         $id = $input['id'];
         $price = $input['price'];
         $reason = $input['case'];
+        $chitu = $input['chitu'];
         if (empty($token) || !$id){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误!']);
             return $this->resultInfo($data);
@@ -122,7 +123,7 @@ class PaymentController extends CommonController
             $data = $this->encrypt(['code'=>400,'msg'=>'价格不能为空']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,true);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $payment = AppPayment::findOne($id);
         $this->check_group_auth($payment->group_id,$user);
@@ -146,11 +147,12 @@ class PaymentController extends CommonController
         $input = Yii::$app->request->post();
         $token = $input['token'];
         $id = $input['id'];
+        $chitu = $input['chitu'];
         if (empty($token) || empty($id)){
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true,$chitu);
         $user = $check_result['user'];
         $payment = AppPayment::findOne($id);
         if($payment->pay_type != 3){

@@ -2,6 +2,7 @@
 namespace app\modules\app\controllers;
 
 
+use app\models\AppAskForCompany;
 use app\models\AppBalance;
 use app\models\AppConfig;
 use app\models\AppGroup;
@@ -34,7 +35,7 @@ class PersonalController extends CommonController{
              $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
              return $this->resultInfo($data);
          }
-         $check_result = $this->check_token($token,false);
+         $check_result = $this->check_token($token,true);
          $user = $check_result['user'];
          $model = new DispatchAddress() ;
          $model->group_id = $user->group_id;
@@ -66,7 +67,7 @@ class PersonalController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $user = $check_result['user'];
         $model = new DispatchContact() ;
         $model->group_id = $user->group_id;
@@ -93,9 +94,13 @@ class PersonalController extends CommonController{
                $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
                return $this->resultInfo($data);
            }
-           $check_result = $this->check_token($token,false);
+           $check_result = $this->check_token($token,true);
            $user = $check_result['user'];
-           $list = DispatchAddress::find()->where(['delete_flag'=>'Y','use_flag'=>'Y','create_user_id'=>$user->id])->asArray()->all();
+           $list = DispatchAddress::find()
+               ->where(['delete_flag'=>'Y','use_flag'=>'Y','create_user_id'=>$user->id])
+               ->orderBy(['create_time'=>SORT_DESC])
+               ->asArray()
+               ->all();
            foreach ($list as $key => $value){
                $list[$key]['pro_name'] = $this->detailadd($value['pro_id']);
                $list[$key]['city_name'] = $this->detailadd($value['city_id']);
@@ -117,9 +122,13 @@ class PersonalController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $user = $check_result['user'];
-        $list = DispatchContact::find()->where(['delete_flag'=>'Y','use_flag'=>'Y','create_user_id'=>$user->id])->asArray()->all();
+        $list = DispatchContact::find()
+            ->where(['delete_flag'=>'Y','use_flag'=>'Y','create_user_id'=>$user->id])
+            ->orderBy(['create_time'=>SORT_DESC])
+            ->asArray()
+            ->all();
         $data = $this->encrypt(['code'=>200,'msg'=>'','data'=>$list]);
         return $this->resultInfo($data);
     }
@@ -137,7 +146,7 @@ class PersonalController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $contact = DispatchContact::findOne($id);
         if(empty($contact)){
             $data = $this->encrypt(['code'=>400,'msg'=>'数据错误']);
@@ -170,7 +179,7 @@ class PersonalController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $model = DispatchAddress::findOne($id);
         if (empty($address)){
             $data = $this->encrypt(['code'=>400,'msg'=>'数据错误']);
@@ -246,7 +255,7 @@ class PersonalController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $contact = DispatchContact::find()->where(['id'=>$id,'delete_flag'=>'Y'])->one();
         if (empty($contact)){
             $data = $this->encrypt(['code'=>400,'msg'=>'数据有误']);
@@ -274,7 +283,7 @@ class PersonalController extends CommonController{
             $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
             return $this->resultInfo($data);
         }
-        $check_result = $this->check_token($token,false);
+        $check_result = $this->check_token($token,true);
         $address = DispatchAddress::find()->where(['id'=>$id,'delete_flag'=>'Y'])->one();
         if (empty($address)){
             $data = $this->encrypt(['code'=>400,'msg'=>'数据有误']);
@@ -627,4 +636,66 @@ class PersonalController extends CommonController{
         $data = $this->encrypt(['code'=>200,'msg'=>'查询成功','data'=>$list]);
         return $this->resultInfo($data);
     }
+
+    /*
+     * 企业认证
+     * */
+    public function actionAttestation(){
+        $request = Yii::$app->request;
+        $input = $request->post();
+        $token = $input['token'];
+        $group_name = $input['group_name'];
+        $file = $_FILES['file'];
+        $group_id = $input['group_id'];
+        if (empty($token)){
+            $data = $this->encrypt(['code'=>400,'msg'=>'参数错误']);
+            return $this->resultInfo($data);
+        }
+        $check_result = $this->check_token($token,false);
+        $user = $check_result['user'];
+        $repeat = AppAskForCompany::find()->where(['group_name'=>$group_name])->one();
+        if ($repeat){
+            $data = $this->encrypt(['code'=>400,'msg'=>'公司名称不能重复！']);
+            return $this->resultInfo($data);
+        }
+        $account = AppAskForCompany::find()->where(['group_id'=>$group_id])->one();
+        $path = $this->Upload('company',$file);
+        if ($account){
+            if ($account->state == 1){
+                $data = $this->encrypt(['code'=>400,'msg'=>'正在审核中']);
+                return $this->resultInfo($data);
+            }else if($account->state == 2){
+                $data = $this->encrypt(['code'=>400,'msg'=>'已认证成功']);
+                return $this->resultInfo($data);
+            }else{
+                $account->image = $path;
+                $account->group_name = $group_name;
+                $account->group_id = $group_id;
+                $account->name = $user->name;
+                $res = $account->save();
+                if ($res){
+                   $data = $this->encrypt(['code'=>200,'msg'=>'申请成功']);
+                   return $this->resultInfo($data);
+                }else{
+                   $data = $this->encrypt(['code'=>400,'msg'=>'申请失败']);
+                   return $this->resultInfo($data);
+                }
+            }
+        }else{
+            $model = new AppAskForCompany();
+            $model->image = $path;
+            $model->group_name = $group_name;
+            $model->group_id = $group_id;
+            $model->name = $user->name;
+            $res = $model->save();
+            if ($res){
+                $data = $this->encrypt(['code'=>200,'msg'=>'申请成功']);
+                return $this->resultInfo($data);
+            }else{
+                $data = $this->encrypt(['code'=>400,'msg'=>'申请失败']);
+                return $this->resultInfo($data);
+            }
+        }
+    }
+
 }
