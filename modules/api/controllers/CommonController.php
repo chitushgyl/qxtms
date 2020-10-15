@@ -939,6 +939,8 @@ class CommonController extends Controller
         $highestRow = $excelSheets->getHighestRow(); //最大行数
         $highestColumn = $excelSheets->getHighestColumn();//最大列数
         $highestColumnIndex = \PHPExcel_Cell::columnIndexFromString($highestColumn);//字母变数字
+        var_dump($highestColumn,$highestRow);
+        exit();
         $data = [];
         for($i = $length; $i<=$highestRow;$i++){
             for($j = 'B';$j<= $highestColumn;$j++){

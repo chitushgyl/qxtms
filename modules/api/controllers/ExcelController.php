@@ -904,8 +904,8 @@ class ExcelController extends CommonController
                 $arr['ordernumber'] = $ordernumber;
                 $arr['takenumber'] = 'T'.date('Ymd').substr(implode(NULL,array_map('ord',str_split(substr(uniqid(),7,13),1))),0,8);
                 $arr['group_id'] = $group_id;
-                $arr['startcity'] = $value['M'];
-                $arr['endcity'] = $value['S'];
+                $arr['startcity'] = $value['L'];
+                $arr['endcity'] = $value['R'];
                 if ($value['B']){
                     $arr['time_start'] = gmdate('Y-m-d H:i:s', \PHPExcel_Shared_Date::ExcelToPHP($value['B']));
                 }else{
@@ -998,24 +998,23 @@ class ExcelController extends CommonController
                     }
                 }
                 $arr['temperture'] = $value['G'];
-                $arr['number'] = $value['I'];
-                $arr['number2'] = $value['H'];
-                $arr['weight'] = $value['J'];
-                $arr['volume'] = $value['K'];
+                $arr['number'] = $value['H'];
+                $arr['weight'] = $value['I'];
+                $arr['volume'] = $value['J'];
 
-                $start_pro = $value['L'];
-                $start_city = $value['M'];
-                $start_area = $value['N'];
-                $start_info = $value['O'];  
+                $start_pro = $value['K'];
+                $start_city = $value['L'];
+                $start_area = $value['M'];
+                $start_info = $value['N'];
 
                 $start_flag = $this->check_address($start_pro,$start_city,$start_area);
                 if ($start_flag['position'] != 'ok') {
                     if ($start_flag['position'] == 'pro') {
-                        $flag = 'L';
+                        $flag = 'K';
                     } else if($start_flag['position'] == 'city') {
-                        $flag = 'M';
+                        $flag = 'L';
                     } else if($start_flag['position'] == 'area') {
-                        $flag = 'N';
+                        $flag = 'M';
                     }
                     $float = $start_flag['msg'];
                     $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
@@ -1024,15 +1023,15 @@ class ExcelController extends CommonController
                 }  
 
                 if (!$start_info) {
-                    $flag = 'O';
+                    $flag = 'N';
                     $float = '提货详细地址不能为空';
                     $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                     $data = $this->encrypt(['code'=>400,'msg'=>$error]);
                     return $this->resultInfo($data);
                 }
 
-                if (!$value['P']) {
-                    $flag = 'P';
+                if (!$value['O']) {
+                    $flag = 'O';
                     $float = '提货联系人不能为空';
                     $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                     $data = $this->encrypt(['code'=>400,'msg'=>$error]);
@@ -1040,30 +1039,30 @@ class ExcelController extends CommonController
                 }
                 $arr['name'] = $value['F'];
 
-                if (!$value['Q']) {
-                    $flag = 'Q';
+                if (!$value['P']) {
+                    $flag = 'P';
                     $float = '提货联系人电话不能为空';
                     $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                     $data = $this->encrypt(['code'=>400,'msg'=>$error]);
                     return $this->resultInfo($data);
                 }
 
-                $start_arr = ['pro'=>$start_pro,'city'=>$start_city,'area'=>$start_area,'info'=>$start_info,'contant'=>$value['P'],'tel'=>$value['Q']];   
+                $start_arr = ['pro'=>$start_pro,'city'=>$start_city,'area'=>$start_area,'info'=>$start_info,'contant'=>$value['O'],'tel'=>$value['P']];
                 $save_start_arr[] = $start_arr;
                 $arr['startstr'] = json_encode([$start_arr],JSON_UNESCAPED_UNICODE);     
 
-                $end_pro = $value['R'];
-                $end_city = $value['S'];
-                $end_area = $value['T'];
-                $end_info = $value['U'];
+                $end_pro = $value['Q'];
+                $end_city = $value['R'];
+                $end_area = $value['S'];
+                $end_info = $value['T'];
                 $end_flag = $this->check_address($end_pro,$end_city,$end_area);
                 if ($end_flag['position'] != 'ok') {
                     if ($end_flag['position'] == 'pro') {
-                        $flag = 'R';
+                        $flag = 'Q';
                     } else if($end_flag['position'] == 'city') {
-                        $flag = 'S';
+                        $flag = 'R';
                     } else if($end_flag['position'] == 'area') {
-                        $flag = 'T';
+                        $flag = 'S';
                     }
                     $float = $end_flag['msg'];
                     $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
@@ -1072,8 +1071,16 @@ class ExcelController extends CommonController
                 }  
 
                 if (!$end_info) {
-                    $flag = 'U';
+                    $flag = 'T';
                     $float = '送货详细地址不能为空';
+                    $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
+                    $data = $this->encrypt(['code'=>400,'msg'=>$error]);
+                    return $this->resultInfo($data);
+                }
+
+                if (!$value['U']) {
+                    $flag = 'U';
+                    $float = '送货联系人不能为空';
                     $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                     $data = $this->encrypt(['code'=>400,'msg'=>$error]);
                     return $this->resultInfo($data);
@@ -1081,28 +1088,20 @@ class ExcelController extends CommonController
 
                 if (!$value['V']) {
                     $flag = 'V';
-                    $float = '送货联系人不能为空';
-                    $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
-                    $data = $this->encrypt(['code'=>400,'msg'=>$error]);
-                    return $this->resultInfo($data);
-                }
-
-                if (!$value['W']) {
-                    $flag = 'W';
                     $float = '送货联系人电话不能为空';
                     $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                     $data = $this->encrypt(['code'=>400,'msg'=>$error]);
                     return $this->resultInfo($data);
                 }
 
-                $end_arr = ['pro'=>$end_pro,'city'=>$end_city,'area'=>$end_area,'info'=>$end_info,'contant'=>$value['V'],'tel'=>$value['W']];  
+                $end_arr = ['pro'=>$end_pro,'city'=>$end_city,'area'=>$end_area,'info'=>$end_info,'contant'=>$value['U'],'tel'=>$value['V']];
                 $save_end_arr[] = $end_arr; 
                 $arr['endstr'] = json_encode([$end_arr],JSON_UNESCAPED_UNICODE);  
                 if($chitu == 2){
                     $is_yn = ['需要','不需要'];
-                    $picktype = strtoupper($value['X']);
+                    $picktype = strtoupper($value['W']);
                     if (!$picktype) {
-                        $flag = 'X';
+                        $flag = 'W';
                         $float = '司机/物流装货不能为空';
                         $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                         $data = $this->encrypt(['code'=>400,'msg'=>$error]);
@@ -1110,7 +1109,7 @@ class ExcelController extends CommonController
                     } else {
 
                         if (!in_array($picktype,$is_yn)) {
-                            $flag = 'X';
+                            $flag = 'W';
                             $float = '司机/物流装货只能填写:按要求填写';
                             $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                             $data = $this->encrypt(['code'=>400,'msg'=>$error]);
@@ -1119,10 +1118,10 @@ class ExcelController extends CommonController
                     }
                     if ($picktype == '需要') {
                         $arr['picktype'] = 1;
-                        if ($value['Z']) {
-                            $arr['pickprice'] = (float)$value['Z'];
+                        if ($value['Y']) {
+                            $arr['pickprice'] = (float)$value['Y'];
                         }else{
-                            $flag = 'Z';
+                            $flag = 'Y';
                             $float = '请填写装货价格';
                             $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                             $data = $this->encrypt(['code'=>400,'msg'=>$error]);
@@ -1133,16 +1132,16 @@ class ExcelController extends CommonController
                         $arr['pickprice'] = 0;
                     }
 
-                    $sendtype = strtoupper($value['Y']);
+                    $sendtype = strtoupper($value['X']);
                     if (!$sendtype) {
-                        $flag = 'Y';
+                        $flag = 'X';
                         $float = '司机/物流装货不能为空';
                         $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                         $data = $this->encrypt(['code'=>400,'msg'=>$error]);
                         return $this->resultInfo($data);
                     } else {
                         if (!in_array($sendtype,$is_yn)) {
-                            $flag = 'Y';
+                            $flag = 'X';
                             $float = '司机/物流卸货只能填写:需要、不需要';
                             $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                             $data = $this->encrypt(['code'=>400,'msg'=>$error]);
@@ -1152,10 +1151,10 @@ class ExcelController extends CommonController
 
                     if ($sendtype == '需要') {
                         $arr['sendtype'] = 1;
-                        if ($value['AA']) {
-                            $arr['sendprice'] = (float)$value['AA'];
+                        if ($value['Z']) {
+                            $arr['sendprice'] = (float)$value['Z'];
                         }else{
-                            $flag = 'AA';
+                            $flag = 'Z';
                             $float = '请填写卸货价格';
                             $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                             $data = $this->encrypt(['code'=>400,'msg'=>$error]);
@@ -1166,22 +1165,22 @@ class ExcelController extends CommonController
                         $arr['sendprice'] = 0;
                     }
 
-                    if (!$value['AB']) {
-                        $flag = 'AB';
+                    if (!$value['AA']) {
+                        $flag = 'AA';
                         $float = '运输费不能为空';
                         $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                         $data = $this->encrypt(['code'=>400,'msg'=>$error]);
                         return $this->resultInfo($data);
                     }
-                    $arr['price'] = (float)$value['AB'];
-                    $arr['more_price'] = (float)$value['AC'];
-                    $arr['otherprice'] = (float)$value['AD'];
-                    $arr['remark'] = $value['AE'];
+                    $arr['price'] = (float)$value['AA'];
+                    $arr['more_price'] = (float)$value['AB'];
+                    $arr['otherprice'] = (float)$value['AC'];
+                    $arr['remark'] = $value['AD'];
                 }else{
                     $is_yn = ['需要','不需要'];
-                    $picktype = strtoupper($value['X']);
+                    $picktype = strtoupper($value['W']);
                     if (!$picktype) {
-                        $flag = 'X';
+                        $flag = 'W';
                         $float = '司机/物流装货不能为空';
                         $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                         $data = $this->encrypt(['code'=>400,'msg'=>$error]);
@@ -1189,7 +1188,7 @@ class ExcelController extends CommonController
                     } else {
 
                         if (!in_array($picktype,$is_yn)) {
-                            $flag = 'X';
+                            $flag = 'W';
                             $float = '司机/物流装货只能填写:按要求填写';
                             $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                             $data = $this->encrypt(['code'=>400,'msg'=>$error]);
@@ -1204,16 +1203,16 @@ class ExcelController extends CommonController
                         $arr['pickprice'] = 0;
                     }
 
-                    $sendtype = strtoupper($value['Y']);
+                    $sendtype = strtoupper($value['X']);
                     if (!$sendtype) {
-                        $flag = 'Y';
+                        $flag = 'X';
                         $float = '司机/物流装货不能为空';
                         $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                         $data = $this->encrypt(['code'=>400,'msg'=>$error]);
                         return $this->resultInfo($data);
                     } else {
                         if (!in_array($sendtype,$is_yn)) {
-                            $flag = 'Y';
+                            $flag = 'X';
                             $float = '司机/物流卸货只能填写:需要、不需要';
                             $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                             $data = $this->encrypt(['code'=>400,'msg'=>$error]);
@@ -1229,8 +1228,8 @@ class ExcelController extends CommonController
                         $arr['sendprice'] = 0;
                     }
 
-                    if (!$value['Z']) {
-                        $flag = 'Z';
+                    if (!$value['Y']) {
+                        $flag = 'Y';
                         $float = '运输费不能为空';
                         $error = '第'.$key.'行'.$flag.'列'.'数据有误:'.$float.'，请认真核实！';
                         $data = $this->encrypt(['code'=>400,'msg'=>$error]);
@@ -1277,7 +1276,7 @@ class ExcelController extends CommonController
                     $res_r = Yii::$app->db->createCommand()->batchInsert(AppReceive::tableName(), ['compay_id','receivprice','trueprice','receive_info','create_user_id','create_user_name','group_id','paytype','ordernumber','type','create_time','update_time'], $receive_info)->execute();
                     $arr = $this->insert_id($receive_info);
                 }else {
-                    $res = Yii::$app->db->createCommand()->batchInsert(AppOrder::tableName(), ['ordernumber','takenumber','group_id','startcity','endcity','time_start','time_end','cartype','company_id','paytype', 'name','temperture','number','number2','weight','volume','startstr','endstr','picktype','pickprice','sendtype','sendprice','price','remark','order_type','create_user_id','create_user_name','create_time','update_time','total_price','money_state'], $info)->execute();
+                    $res = Yii::$app->db->createCommand()->batchInsert(AppOrder::tableName(), ['ordernumber','takenumber','group_id','startcity','endcity','time_start','time_end','cartype','company_id','paytype', 'name','temperture','number','weight','volume','startstr','endstr','picktype','pickprice','sendtype','sendprice','price','remark','order_type','create_user_id','create_user_name','create_time','update_time','total_price','money_state'], $info)->execute();
                     $res_r = true;
                     $arr = true;
                 }
@@ -1659,7 +1658,7 @@ class ExcelController extends CommonController
 
                 $arr['create_time'] = $arr['update_time'] = date('Y-m-d H:i:s',time());
                 if($chitu == 2){
-                    $arr['total_price'] = (float)$arr['pickprice'] + (float)$arr['sendprice'] + $arr['price'] + $arr['otherprice'] + $arr['more_price'];
+                    $arr['total_price'] = (float)$arr['pickprice'] + (float)$arr['sendprice'] + $arr['price'] + $arr['otherprice'];
                 }else{
                     $arr['total_price'] = $arr['price'];
                 }
@@ -1688,7 +1687,7 @@ class ExcelController extends CommonController
                     $res_r = Yii::$app->db->createCommand()->batchInsert(AppReceive::tableName(), ['compay_id','receivprice','trueprice','receive_info','create_user_id','create_user_name','group_id','paytype','ordernumber','type','create_time','update_time'], $receive_info)->execute();
                     $arr = $this->insert_id($receive_info);
                 }else{
-                    $res = Yii::$app->db->createCommand()->batchInsert(AppOrder::tableName(), ['ordernumber','takenumber','group_id','startcity','endcity','time_start','company_id','paytype','name','temperture','number','number2','weight','volume','startstr','endstr','picktype','pickprice','sendtype','sendprice','price','remark','order_type','create_user_id','create_user_name','create_time','update_time','total_price','money_state'], $info)->execute();
+                    $res = Yii::$app->db->createCommand()->batchInsert(AppOrder::tableName(), ['ordernumber','takenumber','group_id','startcity','endcity','time_start','company_id','paytype','name','temperture','number','weight','volume','startstr','endstr','picktype','pickprice','sendtype','sendprice','price','remark','order_type','create_user_id','create_user_name','create_time','update_time','total_price','money_state'], $info)->execute();
                     $res_r = true;
                     $arr = true;
                 }
@@ -2058,7 +2057,7 @@ class ExcelController extends CommonController
 
         if ($file['tmp_name'] != '') {
             $path = $this->Upload('car', $file);
-            $list = $this->reander(Yii::$app->basePath . '/web/' . $path);//导入
+            $list = $this->reander_more(Yii::$app->basePath . '/web/' . $path);//导入
             // $data = $this->encrypt(['code'=>400,'msg'=>'ok','list'=>$list]);
             // return $this->resultInfo($data);
             $time = date('Y-m-d H:i:s',time());
