@@ -254,14 +254,14 @@ class CustomerController extends CommonController
         $model = Customer::find()->where(['id'=>$id])->one();
         $model->all_name = $input['all_name'];
         $model->group_id = $input['group_id'];
-        $model->address = $input['address'];
+        $model->address = $input['address'] ??'';
         $model->paystate = $input['paystate'];
         $model->contact_name = $input['contact_name'];
         $model->contact_tel = $input['contact_tel'];
         $model->remark = $input['remark'];
-        $model->province_id = $input['pro_id'];
-        $model->city_id = $input['city_id'];
-        $model->area_id = $input['area_id'];
+        $model->province_id = $input['pro_id'] ??'';
+        $model->city_id = $input['city_id'] ??'';
+        $model->area_id = $input['area_id'] ??'';
         $model->title = $input['title'];
         $model->bank = $input['bank'];
         $model->bank_number = $input['bank_number'];

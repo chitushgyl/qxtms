@@ -5,6 +5,7 @@ namespace app\modules\api\controllers;
 use app\models\AppCartype;
 use app\models\AppCommonAddress;
 use app\models\AppCommonContacts;
+use app\models\AppCustomerAccount;
 use app\models\AppGroup;
 use app\models\AppOrder;
 use app\models\AppPayment;
@@ -271,15 +272,10 @@ class ExcelController extends CommonController
                 if ($group->main_id != 1) {
                     $group= AppGroup::find()->where(['id'=>$group->group_id])->one();
                 }
+                $customer = Customer::find()->where(['id'=>$company_id])->one();
+                $arr['company_id'] = $customer->id;
+                $arr['paytype'] = $customer->paystate;
 
-                $customer = Customer::find()->where(['group_id'=>$group_id,'all_name'=>$value['E']])->one();
-                if ($customer){
-                    $arr['company_id'] = $customer->id;
-                    $arr['paytype'] = $customer->paystate;
-                }else{
-                    $arr['company_id'] = $company_id;
-                    $arr['paytype'] = $customer->paystate;
-                }
 
                 if (!$value['F']) {
                     $flag = 'F';
@@ -600,14 +596,9 @@ class ExcelController extends CommonController
                 if ($group->main_id != 1) {
                     $group= AppGroup::find()->where(['id'=>$group->group_id])->one();
                 }
-                $customer = Customer::find()->where(['group_id'=>$group_id,'all_name'=>$value['C']])->one();
-                if ($customer){
-                    $arr['company_id'] = $customer->id;
-                    $arr['paytype'] = $customer->paystate;
-                }else{
-                    $arr['company_id'] = $customer_id;
-                    $arr['paytype'] = $customer->paystate;
-                }
+                $customer = Customer::find()->where(['id'=>$customer_id])->one();
+                $arr['company_id'] = $customer->id;
+                $arr['paytype'] = $customer->paystate;
 
                 if (!$value['D']) {
                     $flag = 'D';
@@ -771,7 +762,7 @@ class ExcelController extends CommonController
                     $arr['pickprice'] = '';
                 }
 
-                $sendtype = strtoupper($value['W']);
+                $sendtype = strtoupper($value['V']);
                 if (!$sendtype) {
                     $flag = 'V';
                     $float = '配送服务不能为空';

@@ -3289,7 +3289,7 @@ class OrderController extends CommonController
           }
           $this->check_group_auth($merage_order->group_id,$user);
           $merage_order->state = 8;
-          $main_id = $oid = $split_id = $id_take=[];
+          $main_id = $oid = $split_id = $id_takes=[];
           $id_in = $id_info = $id_split =$split_list = [];
           $count_id = '';
           $transaction= AppMegerOrder::getDb()->beginTransaction();
@@ -3348,6 +3348,8 @@ class OrderController extends CommonController
               $data = $this->encrypt(['code'=>200,'msg'=>'操作成功']);
               return $this->resultInfo($data);
           }catch(\Exception $e){
+              var_dump($e);
+              exit;
               $transaction->rollBack();
               $data = $this->encrypt(['code'=>400,'msg'=>'操作失败']);
               return $this->resultInfo($data);

@@ -57,16 +57,18 @@ class CityorderController extends CommonController{
         if ($city){
             $list->andWhere(['like','a.city',$city]);
         }
-        if ($state == 1){
-            $list->andWhere(['a.order_state'=>1]);
-        }else if($state == 2){
-            $list->andWhere(['a.order_state'=>2]);
-        }else if($state == 3){
-            $list->andWhere(['a.order_state'=>3]);
-        }else if($state == 4){
-            $list->andWhere(['a.order_state'=>4]);
-        }else{
-            $list->andWhere(['a.order_state'=>5]);
+        if ($state){
+            if ($state == 1){
+                $list->andWhere(['a.order_state'=>1]);
+            }else if($state == 2){
+                $list->andWhere(['a.order_state'=>2]);
+            }else if($state == 3){
+                $list->andWhere(['a.order_state'=>3]);
+            }else if($state == 4){
+                $list->andWhere(['a.order_state'=>4]);
+            }else{
+                $list->andWhere(['a.order_state'=>5]);
+            }
         }
         if ($group_id) {
             $list->andWhere(['a.group_id'=>$group_id]);
