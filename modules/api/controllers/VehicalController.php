@@ -1894,9 +1894,9 @@ class VehicalController extends CommonController
     {
         $input = Yii::$app->request->post();
         $group_id = $input['group_id'];
-        $pro_id = $input['pro'];
-        $city_id = $input['city'];
-        $area_id = $input['area'];
+        $pro_id = $input['pro'] ?? '';
+        $city_id = $input['city'] ?? '';
+        $area_id = $input['area'] ?? '';
         $address = $input['address'];
         $list = AppCommonAddress::find()
             ->where(['like', 'all', $address]);
@@ -1930,8 +1930,8 @@ class VehicalController extends CommonController
      * */
     public function actionSelect_contact(){
         $input = Yii::$app->request->post();
-        $name = $input['name'];
-        $tel = $input['tel'];
+        $name = $input['name'] ?? '';
+        $tel = $input['tel'] ?? '';
         $user_id = $input['user_id'];
         $list = AppCommonContacts::find()
             ->where(['user_id'=>$user_id]);

@@ -1273,8 +1273,8 @@ class ExcelController extends CommonController
                 }
                 if ($res && $arr && $res_r){
                     $transaction->commit();
-                    @$this->leading_in_address_user($save_start_arr,$user['parent_group_id'],$user['id']);
-                    @$this->leading_in_address_user($save_end_arr,$user['parent_group_id'],$user['id']);
+//                    @$this->leading_in_address_user($save_start_arr,$user['parent_group_id'],$user['id']);
+//                    @$this->leading_in_address_user($save_end_arr,$user['parent_group_id'],$user['id']);
                     $data = $this->encrypt(['code'=>200,'msg'=>'导入成功']);
                     return $this->resultInfo($data);
                 }else{
@@ -1684,8 +1684,8 @@ class ExcelController extends CommonController
                 }
                 if ($res && $arr && $res_r){
                     $transaction->commit();
-                    @$this->leading_in_address_user($save_start_arr,$user['parent_group_id'],$user['id']);
-                    @$this->leading_in_address_user($save_end_arr,$user['parent_group_id'],$user['id']);
+//                    @$this->leading_in_address_user($save_start_arr,$user['parent_group_id'],$user['id']);
+//                    @$this->leading_in_address_user($save_end_arr,$user['parent_group_id'],$user['id']);
                     $data = $this->encrypt(['code'=>200,'msg'=>'导入成功']);
                     return $this->resultInfo($data);
                 }else{

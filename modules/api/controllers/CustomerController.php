@@ -142,9 +142,9 @@ class CustomerController extends CommonController
         $model->contact_name = $input['contact_name'];
         $model->contact_tel = $input['contact_tel'];
         $model->remark = $input['remark'];
-        $model->province_id = $input['pro_id'];
-        $model->city_id = $input['city_id'];
-        $model->area_id = $input['area_id'];
+//        $model->province_id = $input['pro_id'];
+//        $model->city_id = $input['city_id'];
+//        $model->area_id = $input['area_id'];
         $model->group_id = $group_id;
         $model->title = $input['title'];
         $model->bank = $input['bank'];
@@ -259,9 +259,9 @@ class CustomerController extends CommonController
         $model->contact_name = $input['contact_name'];
         $model->contact_tel = $input['contact_tel'];
         $model->remark = $input['remark'];
-        $model->province_id = $input['pro_id'] ??'';
-        $model->city_id = $input['city_id'] ??'';
-        $model->area_id = $input['area_id'] ??'';
+//        $model->province_id = $input['pro_id'] ??'';
+//        $model->city_id = $input['city_id'] ??'';
+//        $model->area_id = $input['area_id'] ??'';
         $model->title = $input['title'];
         $model->bank = $input['bank'];
         $model->bank_number = $input['bank_number'];
