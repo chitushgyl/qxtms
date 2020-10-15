@@ -203,7 +203,8 @@ class SelectController extends CommonController
         $limit = $input['limit'] ?? 10;
         $ordernumber = $input['ordernumber'] ?? '';
         $begintime = $input['begintime'] ?? '';
-
+        $startcity = $input['startcity'] ?? '';
+        $endcity = $input['endcity'] ?? '';
         $data = [
             'code' => 200,
             'msg'   => '',
@@ -223,6 +224,16 @@ class SelectController extends CommonController
             $time_s = $begintime . ' 00:00:00';
             $time_e = $begintime . ' 23:59:59';
             $list->andWhere(['between','v.time_start',$time_s,$time_e]);
+        }
+        if ($startcity && $endcity){
+            $list->andWhere(['like','v.startcity',$startcity])
+                ->andWhere(['like','v.endcity',$endcity]);
+        }else{
+            if ($startcity){
+                $list->andWhere(['like','v.startcity',$startcity]);
+            }else if($endcity){
+                $list->andWhere(['like','v.endcity',$endcity]);
+            }
         }
         $count = $list->count();
         $list = $list->offset(($page - 1) * $limit)
