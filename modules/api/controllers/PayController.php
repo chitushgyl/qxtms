@@ -256,6 +256,11 @@ class PayController extends CommonController
         if ($arr['trade_status'] == 'TRADE_SUCCESS') {
             $pay = new AppPaymessage();
             $user = User::findOne($arr['passback_params']);
+            $flag = AppPaymessage::find()->where(['group_id'=>$user->group_id,'orderid'=>$_POST['out_trade_no']])->one();
+            if ($flag){
+                echo 'success';
+                return false;
+            }
             $pay->orderid = $arr['out_trade_no'];
             $pay->paynum = $arr['total_amount'];
             $pay->platformorderid = $arr['trade_no'];
