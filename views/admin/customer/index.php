@@ -14,9 +14,6 @@ echo \Yii::$app->view->renderFile('@app/views/admin/base.php');
         </div>
 
         <button class=" layui-btn layui-btn-normal" data-type="reload" id="searchBtn" style="margin-left: 40px">搜索</button>
-        <?php if(can('admin.customer.add')){?>
-        <a class="layui-btn layui-btn" href="<?php echo route('admin.customer.add');?>">添加</a>
-        <?php } ?>
     </div>
 
     <div class="layui-card-body">

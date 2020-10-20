@@ -20,7 +20,9 @@ echo \Yii::$app->view->renderFile('@app/views/admin/base.php');
                 <input class="layui-input" name="keyword" id="keyword" autocomplete="off" placeholder="请输入公司名称" style="width: 320px">
             </div>
             <button class=" layui-btn layui-btn-normal" data-type="reload" id="searchBtn" style="margin-left: 40px">搜索</button>
-<!--            <button class=" layui-btn layui-btn-normal" data-type="add" id="add" style="margin-left: 100px;float:right">添加</button>-->
+            <?php if(can('admin.account-number.add')){?>
+                <a class="layui-btn layui-btn" href="<?php echo route('admin.account-number.add');?>">添加</a>
+            <?php } ?>
         </div>
 
 
@@ -40,10 +42,6 @@ echo \Yii::$app->view->renderFile('@app/views/admin/base.php');
 
     <script type="text/html" id="options">
         <div class="layui-btn-group">
-            <?php if(can('admin.account-number.add')){?>
-                <a class="layui-btn layui-btn-sm" lay-event="add">添加</a>
-            <?php } ?>
-
             <?php if(can('admin.account-number.view')){?>
                 <a class="layui-btn  layui-btn-sm " lay-event="view">详情</a>
             <?php } ?>
