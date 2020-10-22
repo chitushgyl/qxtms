@@ -25,14 +25,6 @@
                     return m;
                 }
             },
-            code : function(value, item){
-                if (!value) {
-                    return '验证码不能为空！';
-                }
-                if (value.length <2) {
-                    return '验证码长度最少2位！';
-                }
-            },
             password : function(value, item){
                 if (!value) {
                     return '密码不能为空！';

@@ -15,13 +15,6 @@
     </div>
 </div>
 <div class="layui-form-item">
-    <label for="" class="layui-form-label"><span class="required_red">*</span>验证码</label>
-    <div class="layui-input-block">
-        <input type="text" name="code" value=""  lay-verify="code" placeholder="请输入手机验证码" class="layui-input" >
-    </div>
-</div>
-
-<div class="layui-form-item">
     <label for="" class="layui-form-label"><span class="required_red">*</span>密码</label>
     <div class="layui-input-block">
         <input type="password" name="password" value=""  lay-verify="password" placeholder="请输入密码" class="layui-input" >

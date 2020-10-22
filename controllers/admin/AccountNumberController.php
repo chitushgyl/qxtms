@@ -79,45 +79,31 @@ class AccountNumberController extends AdminBaseController{
                     $this->withErrors('公司已存在，请勿重复注册');
                 }
             }
-            $userCheck = TelCheck::find()->where(['tel'=>$data['tel']])->one();
-            if ($userCheck->message != $data['code']){
-                $flag_error = false;
-                $this->withErrors('验证码错误，请重新输入');
+            if ($data['tel']){
+                $USER = User::find()->where(['login'=>$data['tel'],'delete_flag'=>'Y','use_flag'=>'Y'])->asArray()->one();
+                if ($USER){
+                    $flag_error = false;
+                    $this->withErrors('账户已存在，请勿重复注册');
+                }
             }
-//        $this->tryLimit('abc',$phone,3600,1);
-
-            //验证验证码
-            if(strlen($data['code']) > 4){ // 验证码不能超过四位数字
-                $flag_error = false;
-                $this->withErrors('验证码不能超过四位数字');
-            }elseif($userCheck->message != $data['code']){ // 验证码是否正确
-                $flag_error = false;
-                $this->withErrors('验证码错误，请重新输入');
-            }elseif($userCheck->expired_time < time()){ // 检查过期时间
-                $flag_error = false;
-                $this->withErrors('验证码已过期');
-            }
-            $group = new AppGroup();
-            $group->tel = $data['tel'];
-            $group->name = $data['name'];
-            $group->group_name = $data['group_name'];
-            $group->main_id = 1;
-            $group->level_id = 3;
-            $arr = $group->save();
-
-            $model->tel = $model->login  = $data['tel'];
-            $model->name = $data['name'];
-            $model->pwd = md5($data['password']);
-            $model->level_id = 3;
-            $model->authority_id = 1;
-            $model->com_type = 1;
-            $model->group_id = $model->parent_group_id = $group->id;;
-            $model->admin_id = 1;
-            $res = $model->save();
-
-
             if ($flag_error) {
-//                $model->aid = $this->root_id;
+                $group = new AppGroup();
+                $group->tel = $data['tel'];
+                $group->name = $data['name'];
+                $group->group_name = $data['group_name'];
+                $group->main_id = 1;
+                $group->level_id = 3;
+                $arr = $group->save();
+
+                $model->tel = $model->login  = $data['tel'];
+                $model->name = $data['name'];
+                $model->pwd = md5($data['password']);
+                $model->level_id = 3;
+                $model->authority_id = 1;
+                $model->com_type = 1;
+                $model->group_id = $model->parent_group_id = $group->id;;
+                $model->admin_id = 1;
+                $res = $model->save();
 
                 if($res){
                     AddLogController::addSysLog(AddLogController::customer,'新增系统账户:'.$data['group_name']);

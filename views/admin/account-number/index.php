@@ -25,8 +25,6 @@ echo \Yii::$app->view->renderFile('@app/views/admin/base.php');
             <?php } ?>
         </div>
 
-
-
         <div class="layui-card-body">
             <table id="dataTable" lay-filter="dataTable"></table>
         </div>
