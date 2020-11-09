@@ -1784,7 +1784,7 @@ class ExcelController extends CommonController
         $info = [];
         if ($file['tmp_name'] != '') {
             $path =  $this->Upload('customer',$file);
-            $list = $this->reander(Yii::$app->basePath . '/web/' . $path);//导入
+            $list = $this->reander_more(Yii::$app->basePath . '/web/' . $path);//导入
             if (!$list) {
                 $data = $this->encrypt(['code'=>400,'msg'=>'导入数据不能为空']);
                 return $this->resultInfo($data);
@@ -1940,7 +1940,7 @@ class ExcelController extends CommonController
         $address = $contact_name = $contact_tel =  $remark =  $paystate = '';
         if ($file['tmp_name'] != '') {
             $path = $this->Upload('customer', $file);
-            $list = $this->reander(Yii::$app->basePath . '/web/' . $path);//导入
+            $list = $this->reander_more(Yii::$app->basePath . '/web/' . $path);//导入
             foreach ($list as $key =>$value){
                 if (!(array_filter($value))){
                     continue;
